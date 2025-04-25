@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editor Unificado de Metadatos</title>
+    <meta name="viewport" content="width=950, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .main-flex {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+        .form-panel, .output-panel {
+            flex: 1;
+            margin: 10px;
+        }
+        .output-panel {
+            padding: 20px;
+            background-color: #f7f7f7;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-flex">
+        <div class="container form-panel">
+            <h1><i class="fa-solid fa-pen-ruler" style="margin-right:10px;"></i>Editor Unificado de Metadatos</h1>
+            <div class="section" id="file-section">
+                <label for="file-path"><i class="fa-solid fa-file-lines"></i> Archivo de entrada:</label>
+                <div class="input-group">
+                    <button id="select-file-btn" type="button"><i class="fa-solid fa-file-import"></i> Seleccionar archivo</button>
+                    <input type="text" id="file-path" placeholder="Ruta del archivo" readonly style="background:#f0f0f0;" />
+                </div>
+            </div>
+            <div class="section" id="folder-section">
+                <label for="folder-path"><i class="fa-solid fa-folder"></i> Carpeta de entrada:</label>
+                <div class="input-group">
+                    <button id="select-folder-btn" type="button"><i class="fa-solid fa-folder-open"></i> Seleccionar carpeta</button>
+                    <input type="text" id="folder-path" placeholder="Ruta de la carpeta" readonly style="background:#f0f0f0;" />
+                </div>
+                <div class="input-group">
+                    <label for="tipo-carpeta" style="flex:1;"><i class="fa-solid fa-filter"></i> Tipo de archivo a procesar (solo para carpetas):</label>
+                    <select id="tipo-carpeta" style="flex:1;">
+                        <option value="ambos">Imágenes y Videos</option>
+                        <option value="imagen">Solo Imágenes</option>
+                        <option value="video">Solo Videos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="section">
+                <div class="input-group">
+                    <label style="flex: 1;">
+                        <input type="radio" name="modo-fecha" id="modo-fecha-extraida" value="extraida" checked>
+                        <i class="fa-regular fa-calendar-check"></i> Usar fecha extraída
+                    </label>
+                    <label style="flex: 1;">
+                        <input type="radio" name="modo-fecha" id="modo-fecha-manual" value="manual">
+                        <i class="fa-solid fa-calendar-pen"></i> Usar fecha manual
+                    </label>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="fecha-extraida" placeholder="Fecha extraída" readonly style="background:#f0f0f0;" />
+                    <input type="text" id="hora-extraida" placeholder="Hora extraída" readonly style="background:#f0f0f0;" />
+                </div>
+                <div class="input-group">
+                    <input type="datetime-local" id="fecha-hora-manual" />
+                </div>
+            </div>
+            <div class="section">
+                <button id="procesar-btn"><i class="fa-solid fa-gears"></i> Procesar</button>
+            </div>
+            <div class="section">
+                <button id="cambiar-meta-video-btn"><i class="fa-solid fa-film"></i> Cambiar metadata de video</button>
+            </div>
+        </div>
+        <div class="container output-panel">
+            <h1 style="font-size:1.3rem;margin-bottom:18px;"><i class="fa-solid fa-terminal"></i> Salida / Log</h1>
+            <div class="section">
+                <textarea id="log" rows="18" readonly style="width:100%;"></textarea>
+            </div>
+        </div>
+    </div>
+    <script src="renderer.js"></script>
+    <script>
+    // Drag and Drop zona
+    document.addEventListener('DOMContentLoaded', function() {
+      const dropZone = document.querySelector('.form-panel');
+      dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropZone.style.background = '#e0e7ef';
+      });
+      dropZone.addEventListener('dragleave', function(e) {
+        dropZone.style.background = '';
+      });
+      dropZone.addEventListener('drop', async function(e) {
+        e.preventDefault();
+        dropZone.style.background = '';
+        const items = e.dataTransfer.items;
+        if (!items || items.length === 0) return;
+        const item = items[0];
+        if (item.kind === 'file') {
+          const file = item.getAsFile();
+          logMsg('Intentando cargar archivo/carpeta por drag & drop...');
+          logMsg('file.name: ' + file.name);
+          logMsg('file.path: ' + file.path);
+          logMsg('file.webkitRelativePath: ' + file.webkitRelativePath);
+          // pywebview API para obtener ruta real
+          let path = file.path || (file.webkitRelativePath ? file.webkitRelativePath : file.name);
+          // Si no tiene path real, pedirlo a backend
+          if (!file.path && window.pywebview && window.pywebview.api && window.pywebview.api.get_dropped_path) {
+            path = await window.pywebview.api.get_dropped_path(file.name);
+          }
+          if (!path) {
+            logMsg('❌ No se pudo obtener la ruta del archivo/carpeta. Valor de path: ' + path);
+            return;
+          }
+          logMsg('Ruta detectada para drag & drop: ' + path);
+          // Detectar si es archivo o carpeta
+          const res = await window.pywebview.api.is_file_or_dir(path);
+          logMsg('Respuesta de is_file_or_dir: ' + JSON.stringify(res));
+          if (res.type === 'file') {
+            selectedFilePath = path;
+            selectedFolderPath = null;
+            $("file-path").value = path;
+            $("folder-path").value = "";
+            const meta = await window.pywebview.api.extraer_fecha_hora(path);
+            setFechaExtraida(meta.fecha, meta.hora);
+            logMsg('Archivo cargado por drag & drop.');
+          } else if (res.type === 'dir') {
+            selectedFolderPath = path;
+            selectedFilePath = null;
+            $("folder-path").value = path;
+            $("file-path").value = "";
+            setFechaExtraida("", "");
+            logMsg('Carpeta cargada por drag & drop.');
+          } else {
+            logMsg('❌ No se pudo identificar el tipo de elemento arrastrado. Valor de path: ' + path);
+          }
+        }
+      });
+    });
+    </script>
+</body>
+</html>

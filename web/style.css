@@ -1,0 +1,567 @@
+/* --- PROFESIONALIZACIÓN DE ESTILOS OPTIMIZADOS SIN SCROLL CON MEJORAS MÓVILES --- */
+:root {
+    --primary-color: #2563eb;
+    --secondary-color: #1e40af;
+    --accent-color: #22d3ee;
+    --background-color: #f3f6fa;
+    --card-color: #fff;
+    --text-color: #23272f;
+    --text-light: #6b7280;
+    --border-color: #e5e7eb;
+    --success-color: #10b981;
+    --warning-color: #f59e42;
+    --error-color: #ef4444;
+    --font-main: 'Inter', 'Segoe UI', Arial, sans-serif;
+    --shadow: 0 4px 16px rgba(30, 64, 175, 0.08);
+    --transition: all 0.2s cubic-bezier(.4,0,.2,1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background: var(--background-color);
+    color: var(--text-color);
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Estructura principal */
+.main-flex {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    padding: 16px;
+    gap: 16px;
+    align-items: stretch;
+}
+
+.container {
+    background: var(--card-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+}
+
+.form-panel {
+    flex: 1.2;
+    padding: 20px;
+    overflow: auto;
+}
+
+.output-panel {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    background: var(--card-color) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+/* Encabezados */
+h1 {
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 16px;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+h1::after {
+    content: '';
+    display: block;
+    margin: 0 auto;
+    width: 60px;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    position: absolute;
+    bottom: 0;
+    left: calc(50% - 30px);
+}
+
+/* Secciones */
+.section {
+    margin-bottom: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+    padding: 14px 16px;
+    box-shadow: 0 2px 6px rgba(30, 64, 175, 0.03);
+    transition: var(--transition);
+}
+
+.section:hover {
+    background: #f1f5f9;
+}
+
+.section:last-child {
+    margin-bottom: 0;
+}
+
+/* Grupos de entrada */
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.input-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Etiquetas */
+label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+/* Controles de formulario */
+input[type="text"],
+input[type="datetime-local"],
+select,
+textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 6px;
+    font-family: var(--font-main);
+    font-size: 0.9rem;
+    color: var(--text-color);
+    background: #fff;
+    transition: var(--transition);
+}
+
+input[type="text"]:focus,
+input[type="datetime-local"]:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.13);
+}
+
+input[readonly], input:disabled, select:disabled {
+    background: #f3f4f6 !important;
+    color: var(--text-light);
+    cursor: not-allowed;
+}
+
+/* Radio buttons */
+input[type="radio"] {
+    margin-right: 5px;
+    accent-color: var(--primary-color);
+}
+
+/* Botones */
+button {
+    padding: 10px 15px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+button:hover {
+    background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.14);
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(30, 64, 175, 0.08);
+}
+
+#procesar-btn {
+    width: 100%;
+    padding: 12px 0;
+    font-size: 1.05rem;
+}
+
+/* Selector de tipo */
+select {
+    background: #fff url('data:image/svg+xml;utf8,<svg fill="%232563eb" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 10px center/16px 16px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 32px;
+}
+
+/* Área de log */
+#log {
+    font-family: 'Fira Mono', 'Consolas', 'Monaco', monospace;
+    background: #23272f;
+    color: #e0e7ef;
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    resize: none;
+    flex: 1;
+    min-height: 0;
+    line-height: 1.5;
+    font-size: 0.9rem;
+}
+
+/* Estilos específicos para la sección de salida */
+.output-panel .section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+    padding: 0;
+    background: transparent;
+    border-left: none;
+    box-shadow: none;
+}
+
+.output-panel h1 {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+}
+
+/* Estilos de desplazamiento */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.02);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(37,99,235,0.2);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(37,99,235,0.3);
+}
+
+/* Fecha y hora */
+input[type="datetime-local"] {
+    padding: 8px 10px;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(38%) sepia(97%) saturate(1872%) hue-rotate(212deg) brightness(98%) contrast(97%);
+    opacity: 0.8;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
+    opacity: 1;
+}
+
+/* Placeholder */
+::placeholder {
+    color: var(--text-light);
+    opacity: 0.7;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.container {
+    animation: fadeIn 0.4s cubic-bezier(.4,0,.2,1);
+}
+
+/* === DARK MODE === */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-color: #60a5fa;
+        --secondary-color: #2563eb;
+        --accent-color: #38bdf8;
+        --background-color: #181a20;
+        --card-color: #23272f;
+        --text-color: #e5e7ef;
+        --text-light: #94a3b8;
+        --border-color: #293042;
+        --success-color: #22d3ee;
+        --warning-color: #fbbf24;
+        --error-color: #f87171;
+        --shadow: 0 4px 18px rgba(30, 64, 175, 0.15);
+    }
+    body {
+        background: var(--background-color);
+        color: var(--text-color);
+    }
+    .container, .output-panel {
+        background: var(--card-color) !important;
+        color: var(--text-color);
+        border-color: var(--border-color) !important;
+        box-shadow: 0 2px 18px rgba(30, 64, 175, 0.14);
+    }
+    .section {
+        background: #23272f;
+        color: var(--text-color);
+    }
+    label, h1 {
+        color: var(--primary-color);
+    }
+    input, select, textarea {
+        background: #181a20;
+        color: var(--text-color);
+        border-color: var(--border-color);
+    }
+    input[readonly], input:disabled, select:disabled {
+        background: #23272f !important;
+        color: var(--text-light);
+    }
+    button {
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        color: #fff;
+    }
+    #log {
+        background: #181a20;
+        color: #e0e7ef;
+    }
+    ::placeholder {
+        color: var(--text-light);
+        opacity: 0.7;
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        filter: invert(70%) sepia(97%) saturate(1872%) hue-rotate(212deg) brightness(98%) contrast(97%);
+    }
+    select {
+        background-color: #181a20;
+        color: var(--text-color);
+    }
+    .output-panel .section {
+        background: transparent;
+    }
+}
+
+/* ====== OPTIMIZACIÓN MÓVIL MEJORADA ====== */
+@media (max-width: 950px) {
+    .main-flex {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+        padding: 10px;
+        gap: 10px;
+        overflow-y: auto;
+    }
+    
+    .form-panel, .output-panel {
+        width: 100%;
+        min-height: auto;
+        max-height: none;
+        padding: 15px;
+    }
+    
+    .form-panel {
+        flex: 0 0 auto;
+    }
+    
+    .output-panel {
+        flex: 1 0 auto;
+        min-height: 200px;
+    }
+    
+    body {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+    }
+    
+    h1 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+    }
+    
+    .section {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+    
+    /* Ajustar grupos de input para móvil */
+    .input-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .input-group > * {
+        width: 100%;
+    }
+    
+    /* Estilo especial para radio buttons en móvil */
+    .input-group label:has(input[type="radio"]) {
+        flex-direction: row;
+        display: flex;
+        align-items: center;
+        margin-bottom: 0;
+    }
+    
+    /* Ajuste de botones para móvil */
+    button {
+        padding: 10px;
+        font-size: 0.9rem;
+        width: 100%;
+    }
+    
+    #select-file-btn,
+    #select-folder-btn {
+        margin-bottom: 8px;
+    }
+}
+
+/* Ajustes adicionales para móviles pequeños */
+@media (max-width: 480px) {
+    .main-flex {
+        padding: 8px;
+        gap: 8px;
+    }
+    
+    .container {
+        border-radius: 8px;
+    }
+    
+    .form-panel, .output-panel {
+        padding: 12px;
+    }
+    
+    h1 {
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+    }
+    
+    .section {
+        padding: 10px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+    }
+    
+    input[type="text"],
+    input[type="datetime-local"],
+    select {
+        padding: 8px 10px;
+        font-size: 0.85rem;
+    }
+    
+    label {
+        font-size: 0.85rem;
+    }
+    
+    #log {
+        font-size: 0.8rem;
+        padding: 10px;
+    }
+    
+    /* Solución de desbordamiento en móviles pequeños */
+    input, select, button {
+        max-width: 100%;
+    }
+    
+    /* Ajuste de los radio buttons en móviles pequeños */
+    .input-group:has(input[type="radio"]) {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Ajustes para orientación landscape en móviles */
+@media (max-height: 500px) and (orientation: landscape) {
+    .main-flex {
+        flex-direction: row;
+        height: auto;
+        min-height: 100vh;
+    }
+    
+    .form-panel {
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+    
+    h1 {
+        font-size: 1rem;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+    }
+    
+    h1::after {
+        height: 2px;
+        width: 40px;
+        left: calc(50% - 20px);
+    }
+    
+    .section {
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .input-group {
+        margin-bottom: 6px;
+    }
+    
+    button {
+        padding: 6px 10px;
+    }
+    
+    #procesar-btn {
+        padding: 8px 0;
+    }
+}
+
+/* Ajustes táctiles para dispositivos móviles */
+@media (hover: none) and (pointer: coarse) {
+    button, select, input[type="radio"] {
+        min-height: 44px; /* Área táctil mínima recomendada */
+    }
+    
+    input[type="text"],
+    input[type="datetime-local"] {
+        min-height: 40px;
+    }
+    
+    /* Aumentar área de toque sin cambiar apariencia */
+    label:has(input[type="radio"]) {
+        padding: 4px 0;
+    }
+    
+    /* Eliminar efectos hover en dispositivos táctiles */
+    .section:hover {
+        background: #f8fafc;
+    }
+    
+    button:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    /* Aumentar espacio entre elementos tocables */
+    .input-group {
+        gap: 12px;
+    }
+}
