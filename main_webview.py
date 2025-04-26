@@ -19,12 +19,16 @@ class Api:
             base_dir = sys._MEIPASS
         else:
             base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.output_dir = r"C:\\Users\\Yei\\data\\data\\salida"
+        # Cargar rutas fijas desde .env
+        from dotenv import load_dotenv
+        load_dotenv(os.path.join(base_dir, '.env'))
+        self.output_dir = os.getenv('OUTPUT_DIR')
         # Inicializa rutas de ejecutables externos de forma dinámica
         self.exiftool_path = get_bin_path('exiftool.exe')
         self.ffmpeg_path = get_bin_path('ffmpeg.exe')
         self._last_file_path = None
         self._last_folder_path = None
+        self._last_thumb_logs = None
 
     def get_file_path(self):
         # PyWebView native file dialog
@@ -194,18 +198,68 @@ class Api:
         return filename
 
     def extraer_metadata_batch(self, file_paths):
-        # Recibe una lista de rutas, devuelve [{path, fecha, hora} ...]
+        # Recibe una lista de rutas, devuelve [{path, fecha, hora, thumb, thumb_log} ...]
+        from datetime import datetime
+        import os
+        import subprocess
+        import tempfile
+        import base64
         results = []
+        thumb_logs = []
         for path in file_paths:
             try:
                 fecha, hora = extract_datetime_from_filename(path)
             except Exception:
                 fecha, hora = "", ""
+            ext = os.path.splitext(path)[1].lower()
+            thumb = None
+            thumb_log = ''
+            if ext in [".mp4", ".mov", ".avi"]:
+                # Siempre intenta regenerar miniatura
+                try:
+                    tmpdir = tempfile.gettempdir()
+                    base = os.path.splitext(os.path.basename(path))[0]
+                    thumb_path = os.path.join(tmpdir, f"{base}_thumb.jpg")
+                    ffmpeg = self.ffmpeg_path if hasattr(self, 'ffmpeg_path') else get_bin_path('ffmpeg.exe')
+                    # Elimina si existe para forzar regeneración
+                    if os.path.exists(thumb_path):
+                        os.remove(thumb_path)
+                    result = subprocess.run([
+                        ffmpeg, "-y", "-i", path, "-vframes", "1", "-q:v", "2", thumb_path
+                    ], capture_output=True, text=True)
+                    if os.path.exists(thumb_path):
+                        # Codifica la miniatura como base64
+                        with open(thumb_path, "rb") as f:
+                            img_bytes = f.read()
+                            thumb = f"data:image/jpeg;base64,{base64.b64encode(img_bytes).decode('utf-8')}"
+                        thumb_log = f"Miniatura generada: {thumb_path}"
+                    else:
+                        thumb_log = f"❌ Error: Miniatura NO generada para {path}\nSTDERR: {result.stderr}"
+                except Exception as e:
+                    thumb_log = f"❌ Excepción generando miniatura para {path}: {str(e)}"
+            elif ext in [".jpg", ".jpeg", ".png", ".bmp", ".gif"]:
+                # Para imágenes, el preview es el propio archivo codificado base64
+                try:
+                    with open(path, "rb") as f:
+                        img_bytes = f.read()
+                        mime = "image/jpeg"
+                        if ext == ".png": mime = "image/png"
+                        elif ext == ".gif": mime = "image/gif"
+                        elif ext == ".bmp": mime = "image/bmp"
+                        thumb = f"data:{mime};base64,{base64.b64encode(img_bytes).decode('utf-8')}"
+                    thumb_log = "Imagen lista para previsualizar."
+                except Exception as e:
+                    thumb = None
+                    thumb_log = f"❌ Error leyendo imagen: {str(e)}"
             results.append({
                 "path": path,
                 "fecha": fecha,
-                "hora": hora
+                "hora": hora,
+                "thumb": thumb,
+                "thumb_log": thumb_log
             })
+        # Log para mostrar en el frontend si se desea
+        self._last_thumb_logs = thumb_logs
         return results
 
     def procesar_batch(self, archivos):
@@ -270,4 +324,4 @@ if __name__ == '__main__':
     api = Api()
     webview.create_window('Editor Unificado de Metadatos', 'web/index.html',
                           js_api=api, width=950, height=670, resizable=True)
-    webview.start()
+    webview.start(debug=True)

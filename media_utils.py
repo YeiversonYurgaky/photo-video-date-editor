@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 from datetime import timedelta
 
@@ -106,8 +107,6 @@ def extract_datetime_from_filename(filename):
 
 
 def get_bin_path(filename):
-    import sys
-    import os
     if getattr(sys, 'frozen', False):
         base_path = sys._MEIPASS
     else:

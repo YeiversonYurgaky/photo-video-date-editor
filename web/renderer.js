@@ -27,24 +27,27 @@ function setManualEnabled(enabled) {
 let selectedFilePath = null;
 let selectedFolderPath = null;
 
+// Variable global para mantener el batch actual
+window.batchMeta = [];
+
 // --- ELIMINAR DRAG & DROP: restaurar solo selección por botón ---
 // Elimina cualquier lógica de drag & drop, deja solo la selección tradicional
 
 $("select-file-btn").addEventListener("click", async function () {
   const paths = await window.pywebview.api.get_file_path(); // ahora retorna lista
   if (paths && Array.isArray(paths) && paths.length > 0) {
-    // Pide metadata batch al backend
-    const batchMeta = await window.pywebview.api.extraer_metadata_batch(paths);
-    renderBatchTable(batchMeta);
+    window.batchMeta = await window.pywebview.api.extraer_metadata_batch(paths);
+    console.log('batchMeta:', window.batchMeta); // Para depuración
+    renderBatchTable(window.batchMeta);
     logMsg('Archivos seleccionados: ' + paths.join(", "));
   }
 });
 
 // Renderiza una tabla editable para el batch
-function renderBatchTable(batchMeta) {
+function renderBatchTable() {
   const batchDiv = document.getElementById('batch-table-div');
   if (!batchDiv) return;
-  if (!batchMeta || batchMeta.length === 0) {
+  if (!window.batchMeta || window.batchMeta.length === 0) {
     batchDiv.innerHTML = '';
     // Habilita botón clásico si no hay batch
     $("procesar-btn").disabled = false;
@@ -54,6 +57,7 @@ function renderBatchTable(batchMeta) {
   }
   let html = `<table class="batch-table" style="width:100%;border-collapse:collapse;margin-bottom:1em;">
     <tr>
+      <th>Preview</th>
       <th>Archivo</th>
       <th>Fecha extraída</th>
       <th>Hora extraída</th>
@@ -61,23 +65,44 @@ function renderBatchTable(batchMeta) {
       <th>Hora nueva</th>
       <th>Acción</th>
     </tr>`;
-  batchMeta.forEach((item, idx) => {
+  window.batchMeta.forEach((item, idx) => {
     const ext = item.path.split('.').pop().toLowerCase();
     let actionCell = '';
+    let previewCell = '';
+    // Mostrar en consola para depuración
     if (["mp4","mov","avi"].includes(ext)) {
+      const thumbPath = item.thumb || '';
+      if (thumbPath) {
+        let src = thumbPath.startsWith("data:") ? thumbPath : `file:///${thumbPath.replace(/\\/g, '/')}`;
+        previewCell = `<img src="${src}" style="max-width:60px;max-height:40px;object-fit:cover;" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'40\'><rect width=\'100%\' height=\'100%\' fill=\'#eee\'/><text x=\'50%\' y=\'50%\' font-size=\'10\' text-anchor=\'middle\' fill=\'#888\' dy=\'.3em\'>Sin miniatura</text></svg>';"></img>`;
+      } else {
+        previewCell = `<span style='color:#888'>Sin miniatura</span>`;
+      }
       actionCell = `<select id="accion-${idx}">
         <option value="extraer_imagen">Extraer imagen</option>
         <option value="modificar_video">Modificar video</option>
       </select>`;
-    } else {
+    } else if (["jpg","jpeg","png","bmp","gif"].includes(ext)) {
+      // Mostrar preview para imágenes
+      const thumbPath = item.thumb || '';
+      if (thumbPath) {
+        let src = thumbPath.startsWith("data:") ? thumbPath : `file:///${thumbPath.replace(/\\/g, '/')}`;
+        previewCell = `<img src="${src}" style="max-width:60px;max-height:40px;object-fit:cover;">`;
+      } else {
+        previewCell = `<span style='color:#888'>Sin preview</span>`;
+      }
       actionCell = 'Modificar imagen';
+    } else {
+      previewCell = `<span style='color:#888'>No preview</span>`;
+      actionCell = 'No soportado';
     }
     html += `<tr>
-      <td title="${item.path}" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${item.path.split(/[\\/]/).pop()}</td>
-      <td>${item.fecha || '<span style=\'color:#aaa\'>(vacío)</span>'}</td>
-      <td>${item.hora || '<span style=\'color:#aaa\'>(vacío)</span>'}</td>
-      <td><input type="date" value="${item.fecha || ''}" id="fecha-${idx}" style="width:130px;"></td>
-      <td><input type="time" value="${item.hora || ''}" id="hora-${idx}" style="width:110px;"></td>
+      <td>${previewCell}</td>
+      <td style="font-size:12px;">${item.path.split(/[\\/]/).pop()}</td>
+      <td><input type="text" id="fecha-extraida-${idx}" value="${item.fecha || ''}" style="width:90px;font-size:12px;" readonly></td>
+      <td><input type="text" id="hora-extraida-${idx}" value="${item.hora || ''}" style="width:70px;font-size:12px;" readonly></td>
+      <td><input type="date" id="fecha-${idx}" value="" style="width:110px;"></td>
+      <td><input type="time" id="hora-${idx}" value="" style="width:90px;"></td>
       <td>${actionCell}</td>
     </tr>`;
   });
@@ -94,7 +119,7 @@ function renderBatchTable(batchMeta) {
   document.getElementById('procesar-batch-btn').onclick = async function() {
     // Validación: todos los campos deben estar llenos
     let errorMsg = '';
-    const archivos = batchMeta.map((item, idx) => {
+    const archivos = window.batchMeta.map((item, idx) => {
       let fecha = document.getElementById(`fecha-${idx}`).value;
       let hora = document.getElementById(`hora-${idx}`).value;
       let accion = 'modificar_imagen';
@@ -129,6 +154,7 @@ function renderBatchTable(batchMeta) {
 function limpiarBatchTable() {
   const batchDiv = document.getElementById('batch-table-div');
   batchDiv.innerHTML = '';
+  window.batchMeta = [];
   $("procesar-btn").disabled = false;
   $("file-section").style.display = '';
   $("folder-section").style.display = '';
