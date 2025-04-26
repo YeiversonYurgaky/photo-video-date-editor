@@ -171,19 +171,36 @@ def get_unique_output_path(output_dir, base_name):
     return output_path
 
 
-def cambiar_metadata_video(video_path, datetime_exif, exiftool_path=None):
+def cambiar_metadata_video(video_path, datetime_exif, exiftool_path=None, output_dir=None):
     """
-    Cambia la metadata (fecha/hora) de un video directamente usando exiftool.
+    Cambia la metadata (fecha/hora) de un video, guardando una copia modificada en output_dir.
     Args:
         video_path (str): Ruta al archivo de video.
         datetime_exif (str): Fecha y hora en formato 'YYYY:MM:DD HH:MM:SS'.
         exiftool_path (str, opcional): Ruta a exiftool.exe. Si no se proporciona, se busca automáticamente.
+        output_dir (str, opcional): Directorio de salida para la copia modificada. Si es None, modifica el original.
     Returns:
-        bool: True si la operación fue exitosa, lanza excepción si falla.
+        str: Ruta del archivo modificado.
     """
     import subprocess
+    import os
+    import shutil
     if exiftool_path is None:
         exiftool_path = get_bin_path('exiftool.exe')
+    # Si output_dir está definido, crea una copia antes de modificar
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        base = os.path.basename(video_path)
+        name, ext = os.path.splitext(base)
+        out_path = os.path.join(output_dir, f"{name}_mod{ext}")
+        # Evita sobrescribir si ya existe
+        count = 1
+        while os.path.exists(out_path):
+            out_path = os.path.join(output_dir, f"{name}_mod{count}{ext}")
+            count += 1
+        shutil.copy2(video_path, out_path)
+    else:
+        out_path = video_path
     result = subprocess.run([
         exiftool_path,
         f"-AllDates={datetime_exif}",
@@ -191,9 +208,9 @@ def cambiar_metadata_video(video_path, datetime_exif, exiftool_path=None):
         "-overwrite_original",
         "-P",
         "-api", "QuickTimeUTC=1",
-        video_path
+        out_path
     ], capture_output=True, text=True)
     if result.returncode != 0:
         print("Exiftool error:", result.stderr)
         raise RuntimeError(f"Exiftool falló: {result.stderr}")
-    return True
+    return out_path

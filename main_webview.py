@@ -2,6 +2,7 @@ import webview
 import os
 import shutil
 import sys
+from dotenv import load_dotenv
 from media_utils import (
     extract_datetime_from_filename,
     process_image,
@@ -20,7 +21,7 @@ class Api:
         else:
             base_dir = os.path.dirname(os.path.abspath(__file__))
         # Cargar rutas fijas desde .env
-        from dotenv import load_dotenv
+
         load_dotenv(os.path.join(base_dir, '.env'))
         self.output_dir = os.getenv('OUTPUT_DIR')
         # Inicializa rutas de ejecutables externos de forma dinámica
@@ -215,41 +216,45 @@ class Api:
             thumb = None
             thumb_log = ''
             if ext in [".mp4", ".mov", ".avi"]:
-                # Siempre intenta regenerar miniatura
+                # Genera miniatura SOLO en memoria, nunca en disco
                 try:
-                    tmpdir = tempfile.gettempdir()
-                    base = os.path.splitext(os.path.basename(path))[0]
-                    thumb_path = os.path.join(tmpdir, f"{base}_thumb.jpg")
-                    ffmpeg = self.ffmpeg_path if hasattr(self, 'ffmpeg_path') else get_bin_path('ffmpeg.exe')
-                    # Elimina si existe para forzar regeneración
-                    if os.path.exists(thumb_path):
-                        os.remove(thumb_path)
-                    result = subprocess.run([
-                        ffmpeg, "-y", "-i", path, "-vframes", "1", "-q:v", "2", thumb_path
-                    ], capture_output=True, text=True)
-                    if os.path.exists(thumb_path):
-                        # Codifica la miniatura como base64
-                        with open(thumb_path, "rb") as f:
-                            img_bytes = f.read()
-                            thumb = f"data:image/jpeg;base64,{base64.b64encode(img_bytes).decode('utf-8')}"
-                        thumb_log = f"Miniatura generada: {thumb_path}"
-                    else:
-                        thumb_log = f"❌ Error: Miniatura NO generada para {path}\nSTDERR: {result.stderr}"
-                except Exception as e:
-                    thumb_log = f"❌ Excepción generando miniatura para {path}: {str(e)}"
-            elif ext in [".jpg", ".jpeg", ".png", ".bmp", ".gif"]:
-                # Para imágenes, el preview es el propio archivo codificado base64
-                try:
-                    with open(path, "rb") as f:
-                        img_bytes = f.read()
-                        mime = "image/jpeg"
-                        if ext == ".png": mime = "image/png"
-                        elif ext == ".gif": mime = "image/gif"
-                        elif ext == ".bmp": mime = "image/bmp"
-                        thumb = f"data:{mime};base64,{base64.b64encode(img_bytes).decode('utf-8')}"
+                    import ffmpeg
+                    import numpy as np
+                    from PIL import Image
+                    import io
+                    # Extrae el primer frame usando ffmpeg-python
+                    out, _ = (
+                        ffmpeg.input(path, ss=0)
+                        .output('pipe:', vframes=1, format='image2', vcodec='mjpeg')
+                        .run(capture_stdout=True, capture_stderr=True)
+                    )
+                    img = Image.open(io.BytesIO(out))
+                    # Redimensiona thumbnail
+                    img.thumbnail((120, 80))
+                    buffer = io.BytesIO()
+                    img.save(buffer, format="JPEG")
+                    thumb = f"data:image/jpeg;base64,{base64.b64encode(buffer.getvalue()).decode('utf-8')}"
                     thumb_log = "Imagen lista para previsualizar."
                 except Exception as e:
-                    thumb = None
+                    # SVG fallback base64 for 'Sin miniatura'
+                    svg = '''<svg xmlns='http://www.w3.org/2000/svg' width='60' height='40'><rect width='100%' height='100%' fill='#eee'/><text x='50%' y='50%' font-size='10' text-anchor='middle' fill='#888' dy='.3em'>Sin miniatura</text></svg>'''
+                    thumb = f"data:image/svg+xml;base64,{base64.b64encode(svg.encode('utf-8')).decode('utf-8')}"
+                    thumb_log = f"❌ Error leyendo imagen: {str(e)}"
+            elif ext in [".jpg", ".jpeg", ".png", ".bmp", ".gif"]:
+                try:
+                    from PIL import Image
+                    import io
+                    with open(path, 'rb') as f:
+                        img_bytes = f.read()
+                    img = Image.open(io.BytesIO(img_bytes))
+                    img.thumbnail((120, 80))
+                    buffer = io.BytesIO()
+                    img.save(buffer, format="JPEG")
+                    thumb = f"data:image/jpeg;base64,{base64.b64encode(buffer.getvalue()).decode('utf-8')}"
+                    thumb_log = "Imagen lista para previsualizar."
+                except Exception as e:
+                    svg = '''<svg xmlns='http://www.w3.org/2000/svg' width='60' height='40'><rect width='100%' height='100%' fill='#eee'/><text x='50%' y='50%' font-size='10' text-anchor='middle' fill='#888' dy='.3em'>Sin preview</text></svg>'''
+                    thumb = f"data:image/svg+xml;base64,{base64.b64encode(svg.encode('utf-8')).decode('utf-8')}"
                     thumb_log = f"❌ Error leyendo imagen: {str(e)}"
             results.append({
                 "path": path,
@@ -258,42 +263,54 @@ class Api:
                 "thumb": thumb,
                 "thumb_log": thumb_log
             })
-        # Log para mostrar en el frontend si se desea
         self._last_thumb_logs = thumb_logs
         return results
 
     def procesar_batch(self, archivos):
-        # Recibe lista de dicts: {path, fecha, hora}
+        import os
+        from dotenv import load_dotenv
+        load_dotenv()
+        # Recibe lista de dicts: {path, fecha, hora, accion}
         resultados = []
         for archivo in archivos:
             path = archivo.get("path")
             fecha = archivo.get("fecha")
             hora = archivo.get("hora")
+            accion = archivo.get("accion", "modificar_imagen")
             ext = os.path.splitext(path)[1].lower()
             try:
                 # Si la fecha está vacía, usar la fecha actual
                 if not fecha:
                     from datetime import datetime
                     fecha = datetime.now().strftime('%Y:%m:%d')
+                # Si la hora está vacía, usar la hora actual
                 if not hora:
-                    hora = '12:00:00'
-                if ext in [".jpg", ".jpeg", ".png"]:
-                    base = os.path.splitext(os.path.basename(path))[0]
-                    output_path = get_unique_output_path(self.output_dir, base)
-                    datetime_exif = f"{fecha} {hora}" if fecha else None
-                    res = process_image(path, output_path, datetime_exif, self.exiftool_path)
-                elif ext in [".mp4", ".mov", ".avi"]:
-                    accion = archivo.get("accion", "extraer_imagen")
-                    base = os.path.splitext(os.path.basename(path))[0]
+                    from datetime import datetime
+                    hora = datetime.now().strftime('%H:%M:%S')
+                if ext in [".mp4", ".mov", ".avi"]:
                     if accion == "extraer_imagen":
-                        output_path = get_unique_output_path(self.output_dir, base)
+                        # Extraer imagen (frame) del video y guardar en OUTPUT_DIR
+                        base = os.path.splitext(os.path.basename(path))[0]
+                        output_dir = os.getenv('OUTPUT_DIR')
+                        output_path = get_unique_output_path(output_dir, base)
                         datetime_exif = f"{fecha} {hora}" if fecha else None
-                        res = process_video(path, output_path, datetime_exif, self.exiftool_path, self.ffmpeg_path)
+                        try:
+                            process_video(path, output_path, datetime_exif, self.exiftool_path, self.ffmpeg_path)
+                            res = f"✓ Imagen extraída: {output_path}"
+                        except Exception as e:
+                            res = f"❌ Error extrayendo imagen: {str(e)}"
                     elif accion == "modificar_video":
                         datetime_exif = f"{fecha} {hora}" if fecha else None
-                        res = cambiar_metadata_video(path, datetime_exif, self.exiftool_path)
+                        # MODIFICACIÓN: siempre crea copia en OUTPUT_DIR
+                        output_dir = os.getenv('OUTPUT_DIR')
+                        res = cambiar_metadata_video(
+                            path, datetime_exif, self.exiftool_path, output_dir=output_dir)
                     else:
                         res = f"Acción no soportada para {path}"
+                elif ext in [".jpg", ".jpeg", ".png", ".bmp", ".gif"]:
+                    # Aquí va la lógica de imágenes, no se modifica
+                    res = process_image(
+                        path, path, f"{fecha} {hora}", self.exiftool_path)
                 else:
                     res = f"Tipo de archivo no soportado: {path}"
             except Exception as e:
@@ -319,9 +336,22 @@ class Api:
         except Exception as e:
             return {"success": False, "msg": f"❌ Error: {str(e)}"}
 
+    def abrir_output_dir(self):
+        import os
+        import webbrowser
+        output_dir = self.output_dir
+        if output_dir and os.path.isdir(output_dir):
+            # En Windows, usa explorer.exe
+            if os.name == 'nt':
+                os.startfile(output_dir)
+            else:
+                webbrowser.open(f'file://{output_dir}')
+            return True
+        return False
+
 
 if __name__ == '__main__':
     api = Api()
     webview.create_window('Editor Unificado de Metadatos', 'web/index.html',
                           js_api=api, width=950, height=670, resizable=True)
-    webview.start(debug=True)
+    webview.start(debug=False)
