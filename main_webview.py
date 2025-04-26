@@ -30,9 +30,9 @@ class Api:
         # PyWebView native file dialog
         window = webview.windows[0]
         result = window.create_file_dialog(
-            webview.OPEN_DIALOG, allow_multiple=False)
+            webview.OPEN_DIALOG, allow_multiple=True)
         if result and len(result) > 0:
-            self._last_file_path = result[0]
+            self._last_file_path = result
             return self._last_file_path
         return None
 
@@ -192,6 +192,60 @@ class Api:
     def get_dropped_path(self, filename):
         # En Windows/PyWebView, normalmente no se necesita esto, pero se deja para compatibilidad
         return filename
+
+    def extraer_metadata_batch(self, file_paths):
+        # Recibe una lista de rutas, devuelve [{path, fecha, hora} ...]
+        results = []
+        for path in file_paths:
+            try:
+                fecha, hora = extract_datetime_from_filename(path)
+            except Exception:
+                fecha, hora = "", ""
+            results.append({
+                "path": path,
+                "fecha": fecha,
+                "hora": hora
+            })
+        return results
+
+    def procesar_batch(self, archivos):
+        # Recibe lista de dicts: {path, fecha, hora}
+        resultados = []
+        for archivo in archivos:
+            path = archivo.get("path")
+            fecha = archivo.get("fecha")
+            hora = archivo.get("hora")
+            ext = os.path.splitext(path)[1].lower()
+            try:
+                # Si la fecha está vacía, usar la fecha actual
+                if not fecha:
+                    from datetime import datetime
+                    fecha = datetime.now().strftime('%Y:%m:%d')
+                if not hora:
+                    hora = '12:00:00'
+                if ext in [".jpg", ".jpeg", ".png"]:
+                    base = os.path.splitext(os.path.basename(path))[0]
+                    output_path = get_unique_output_path(self.output_dir, base)
+                    datetime_exif = f"{fecha} {hora}" if fecha else None
+                    res = process_image(path, output_path, datetime_exif, self.exiftool_path)
+                elif ext in [".mp4", ".mov", ".avi"]:
+                    accion = archivo.get("accion", "extraer_imagen")
+                    base = os.path.splitext(os.path.basename(path))[0]
+                    if accion == "extraer_imagen":
+                        output_path = get_unique_output_path(self.output_dir, base)
+                        datetime_exif = f"{fecha} {hora}" if fecha else None
+                        res = process_video(path, output_path, datetime_exif, self.exiftool_path, self.ffmpeg_path)
+                    elif accion == "modificar_video":
+                        datetime_exif = f"{fecha} {hora}" if fecha else None
+                        res = cambiar_metadata_video(path, datetime_exif, self.exiftool_path)
+                    else:
+                        res = f"Acción no soportada para {path}"
+                else:
+                    res = f"Tipo de archivo no soportado: {path}"
+            except Exception as e:
+                res = f"❌ Error: {str(e)}"
+            resultados.append({"path": path, "resultado": res})
+        return resultados
 
     def cambiar_metadata_video(self, video_path, fecha, hora):
         """

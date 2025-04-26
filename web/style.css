@@ -226,6 +226,15 @@ select {
     font-size: 0.9rem;
 }
 
+/* Reduce log area height for better UI balance */
+#log {
+  min-height: 60px;
+  height: 180px;
+  max-height: 220px;
+  resize: vertical;
+  font-size: 14px;
+}
+
 /* Estilos específicos para la sección de salida */
 .output-panel .section {
     flex: 1;
@@ -564,4 +573,52 @@ input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
     .input-group {
         gap: 12px;
     }
+}
+
+/* --- ESTILOS PARA BATCH MULTI-ARCHIVO --- */
+.batch-table th, .batch-table td {
+  border: 1px solid #c3c3c3;
+  padding: 0.4em 0.6em;
+  text-align: left;
+}
+.batch-table th {
+  background: #e0e7ef;
+}
+.batch-table tr:nth-child(even) {
+  background: #f8fafd;
+}
+.batch-table input[type="date"], .batch-table input[type="time"] {
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  padding: 0.2em 0.4em;
+  font-size: 1em;
+  background: #fff;
+}
+#procesar-batch-btn {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#procesar-batch-btn:hover {
+  background: #2563eb;
+}
+#batch-error-msg {
+  color: #b00;
+  font-weight: bold;
+  margin-top: 0.5em;
+}
+
+/* Adjust batch table for better layout */
+.batch-table {
+  font-size: 14px;
+}
+.batch-table th, .batch-table td {
+  padding: 4px 8px;
+}
+
+#batch-section {
+  overflow-x: auto;
 }
