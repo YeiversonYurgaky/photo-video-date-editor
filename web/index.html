@@ -49,6 +49,7 @@
               <i class="fa-solid fa-file-import"></i> Seleccionar archivo
             </button>
             <input
+              style="width: 1rem;"
               type="text"
               id="file-path"
               placeholder="Ruta del archivo"
@@ -66,6 +67,7 @@
               <i class="fa-solid fa-folder-open"></i> Seleccionar carpeta
             </button>
             <input
+            style="width: 1rem;"
               type="text"
               id="folder-path"
               placeholder="Ruta de la carpeta"
@@ -88,7 +90,8 @@
         <div class="section">
           <div class="input-group">
             <label style="flex: 1">
-              <input
+              <input 
+                style="width: 1rem;"
                 type="radio"
                 name="modo-fecha"
                 id="modo-fecha-extraida"
@@ -109,6 +112,7 @@
           </div>
           <div class="input-group">
             <input
+              style="width: 1rem;"
               type="text"
               id="fecha-extraida"
               placeholder="Fecha extraída"
@@ -116,6 +120,7 @@
               style="background: #f0f0f0"
             />
             <input
+              style="width: 1rem;"
               type="text"
               id="hora-extraida"
               placeholder="Hora extraída"
@@ -150,82 +155,10 @@
         </h1>
         <div class="section" id="output-section">
           <div id="archivos-table-div"></div>
-          <!-- Aquí puedes mostrar resultados adicionales o mensajes de salida -->
+
         </div>
       </div>
     </div>
     <script src="renderer.js"></script>
-    <script>
-      // Drag and Drop zona
-      document.addEventListener("DOMContentLoaded", function () {
-        const dropZone = document.querySelector(".form-panel");
-        dropZone.addEventListener("dragover", function (e) {
-          e.preventDefault();
-          dropZone.style.background = "#e0e7ef";
-        });
-        dropZone.addEventListener("dragleave", function (e) {
-          dropZone.style.background = "";
-        });
-        dropZone.addEventListener("drop", async function (e) {
-          e.preventDefault();
-          dropZone.style.background = "";
-          const items = e.dataTransfer.items;
-          if (!items || items.length === 0) return;
-          const item = items[0];
-          if (item.kind === "file") {
-            const file = item.getAsFile();
-            logMsg("Intentando cargar archivo/carpeta por drag & drop...");
-            logMsg("file.name: " + file.name);
-            logMsg("file.path: " + file.path);
-            logMsg("file.webkitRelativePath: " + file.webkitRelativePath);
-            // pywebview API para obtener ruta real
-            let path =
-              file.path ||
-              (file.webkitRelativePath ? file.webkitRelativePath : file.name);
-            // Si no tiene path real, pedirlo a backend
-            if (
-              !file.path &&
-              window.pywebview &&
-              window.pywebview.api &&
-              window.pywebview.api.get_dropped_path
-            ) {
-              path = await window.pywebview.api.get_dropped_path(file.name);
-            }
-            if (!path) {
-              logMsg(
-                "❌ No se pudo obtener la ruta del archivo/carpeta. Valor de path: " +
-                  path
-              );
-              return;
-            }
-            logMsg("Ruta detectada para drag & drop: " + path);
-            // Detectar si es archivo o carpeta
-            const res = await window.pywebview.api.is_file_or_dir(path);
-            logMsg("Respuesta de is_file_or_dir: " + JSON.stringify(res));
-            if (res.type === "file") {
-              selectedFilePath = path;
-              selectedFolderPath = null;
-              $("file-path").value = path;
-              $("folder-path").value = "";
-              const meta = await window.pywebview.api.extraer_fecha_hora(path);
-              setFechaExtraida(meta.fecha, meta.hora);
-              logMsg("Archivo cargado por drag & drop.");
-            } else if (res.type === "dir") {
-              selectedFolderPath = path;
-              selectedFilePath = null;
-              $("folder-path").value = path;
-              $("file-path").value = "";
-              setFechaExtraida("", "");
-              logMsg("Carpeta cargada por drag & drop.");
-            } else {
-              logMsg(
-                "❌ No se pudo identificar el tipo de elemento arrastrado. Valor de path: " +
-                  path
-              );
-            }
-          }
-        });
-      });
-    </script>
   </body>
 </html>

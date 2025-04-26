@@ -119,6 +119,12 @@ def process_image(input_path, output_path, datetime_exif, exiftool_path=None):
     import shutil
     if exiftool_path is None:
         exiftool_path = get_bin_path('exiftool.exe')
+    # Si output_path existe, bórralo antes de copiar (garantía extra)
+    if os.path.exists(output_path):
+        try:
+            os.remove(output_path)
+        except Exception as e:
+            raise RuntimeError(f"No se pudo eliminar archivo previo antes de copiar: {output_path}. {str(e)}")
     shutil.copy(input_path, output_path)
     if datetime_exif:
         result = subprocess.run([
@@ -162,11 +168,11 @@ def process_video(input_path, output_path, datetime_exif, exiftool_path=None, ff
     return True
 
 
-def get_unique_output_path(output_dir, base_name):
-    output_path = os.path.join(output_dir, base_name + ".jpg")
+def get_unique_output_path(output_dir, base_name, ext):
+    output_path = os.path.join(output_dir, base_name + ext)
     count = 1
     while os.path.exists(output_path):
-        output_path = os.path.join(output_dir, f"{base_name}_{count}.jpg")
+        output_path = os.path.join(output_dir, f"{base_name}_{count}{ext}")
         count += 1
     return output_path
 
