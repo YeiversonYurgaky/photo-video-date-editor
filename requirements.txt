@@ -1,3 +1,6 @@
 python-dotenv
-webview
+pywebview
 persiantools
+ffmpeg-python 
+numpy 
+pillow
