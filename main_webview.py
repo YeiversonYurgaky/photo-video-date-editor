@@ -310,7 +310,6 @@ class Api:
                             output_img = os.path.join(
                                 output_dir, f"{base}_frame.jpg")
                             # Usa process_video utilitario para extraer el frame con ffmpeg y calidad q:v=2
-                            from media_utils import process_video, cambiar_metadata_imagen
                             process_video(path, output_img, None,
                                           self.exiftool_path, self.ffmpeg_path)
                             # Aplica los metadatos a la imagen extraída
