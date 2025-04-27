@@ -7,9 +7,11 @@ This project is a desktop application built with Python and PyWebView that allow
 ## Main Features
 
 - Batch processing of images and videos to modify only their date metadata (EXIF).
+- **Extract a frame from each video file as an image, with adjustable quality (FFmpeg -q:v).**
+- Apply custom date/time metadata to both images and extracted video frames.
 - File preview support via Base64 (no exposure of local paths).
-- Batch processing for multiple files at once.
-- Automatic extraction of date/time from filenames.
+- Batch processing for multiple files at once, with per-file action selection (e.g., only metadata, or extract frame).
+- Automatic extraction of date/time from filenames, or manual entry with default time fallback.
 - Modern web-based GUI using PyWebView.
 - Flexible path configuration via `.env` file.
 - Optional support for Persian (Jalali) dates using `persiantools`.
@@ -70,7 +72,8 @@ Both options are available to suit different needs and workflows.
    python main_webview.py
    ```
 2. Select files or folders from the interface.
-3. Process the files and review the results in the table and log.
+3. **For videos, choose whether to only modify metadata or extract a frame as an image (with metadata applied) in the batch table.**
+4. Process the files and review the results in the table and log.
 
 ## Notes
 
@@ -92,9 +95,11 @@ Este proyecto es una aplicación de escritorio construida con Python y PyWebView
 ## Características principales
 
 - Procesamiento de imágenes y videos para modificar solamente fechas con EXIF.
+- **Extracción de un frame de cada video como imagen, con calidad ajustable (FFmpeg -q:v).**
+- Aplicación de metadatos personalizados de fecha/hora tanto a imágenes como a los frames extraídos de video.
 - Soporte para previsualización de archivos mediante Base64 (sin exponer rutas locales).
-- Procesamiento en lote de múltiples archivos.
-- Extracción automática de fecha/hora desde el nombre del archivo.
+- Procesamiento en lote de múltiples archivos, con selección de acción por archivo (solo metadata o extraer frame).
+- Extracción automática de fecha/hora desde el nombre del archivo, o ingreso manual con hora predeterminada si no se especifica.
 - Interfaz gráfica moderna (web) usando PyWebView.
 - Configuración flexible de rutas mediante archivo `.env`.
 - Soporte opcional para fechas persas (Jalali) usando `persiantools`.
@@ -155,7 +160,8 @@ Ambas opciones están disponibles para adaptarse a diferentes necesidades y fluj
    python main_webview.py
    ```
 2. Selecciona archivos o carpetas desde la interfaz.
-3. Procesa los archivos y revisa los resultados en la tabla y log.
+3. **Para videos, elige en la tabla batch si solo modificar metadata o extraer un frame como imagen (con metadata aplicado).**
+4. Procesa los archivos y revisa los resultados en la tabla y log.
 
 ## Notas
 
