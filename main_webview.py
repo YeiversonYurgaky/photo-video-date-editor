@@ -292,35 +292,40 @@ class Api:
                     hora = "12:00:00"
                 datetime_exif = f"{fecha} {hora}"
                 if ext in [".jpg", ".jpeg", ".png"]:
-                    cambiar_metadata_imagen(
-                        path, datetime_exif, self.exiftool_path)
-                    res = f"✓ Metadatos aplicados a imagen: {path}"
+                    try:
+                        cambiar_metadata_imagen(
+                            path, datetime_exif, self.exiftool_path)
+                        res = f"✓ Metadatos aplicados a imagen: {path}"
+                    except Exception as e:
+                        res = f"❌ Error metadatos imagen: {str(e)}"
                 elif ext in [".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv", ".webm"]:
-                    cambiar_metadata_video(
-                        path, datetime_exif, self.exiftool_path)
-                    res = f"✓ Metadatos aplicados a video: {path}"
-                    # Extraer frame solo si la acción es 'extraer_frame'
+                    # Si la acción es solo extraer frame, NO modificar el video original
                     if accion == "extraer_frame":
                         try:
-                            output_dir = self.output_dir or os.path.dirname(
-                                path)
+                            output_dir = self.output_dir or os.path.dirname(path)
                             if not os.path.exists(output_dir):
                                 os.makedirs(output_dir)
                             output_img = os.path.join(
                                 output_dir, f"{base}_frame.jpg")
-                            # Usa process_video utilitario para extraer el frame con ffmpeg y calidad q:v=2
                             process_video(path, output_img, None,
                                           self.exiftool_path, self.ffmpeg_path)
-                            # Aplica los metadatos a la imagen extraída
                             try:
                                 cambiar_metadata_imagen(
                                     output_img, datetime_exif, self.exiftool_path)
-                                res += f" | Metadatos aplicados a frame"
+                                res = f"✓ Frame extraído y metadatos aplicados: {output_img}"
                             except Exception as e:
-                                res += f" | ❌ Error aplicando metadatos a frame: {str(e)}"
-                            res += f" | Frame extraído: {output_img}"
+                                res = f"❌ Error metadatos frame: {str(e)}"
                         except Exception as e:
-                            res += f" | ❌ Error extrayendo frame: {str(e)}"
+                            res = f"❌ Error extrayendo frame: {str(e)}"
+                    else:
+                        video_error = None
+                        try:
+                            cambiar_metadata_video(
+                                path, datetime_exif, self.exiftool_path)
+                            res = f"✓ Metadatos aplicados a video: {path}"
+                        except Exception as e:
+                            video_error = str(e)
+                            res = f"⚠️ No se pudieron modificar los metadatos del video: {video_error}"
                 else:
                     res = f"Tipo de archivo no soportado: {path}"
             except Exception as e:

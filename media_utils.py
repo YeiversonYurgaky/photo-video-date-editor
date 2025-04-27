@@ -175,7 +175,44 @@ def cambiar_metadata_imagen(input_path, datetime_exif, exiftool_path=None):
     Returns:
         bool: True si la operación fue exitosa, lanza excepción si falla.
     """
-    return process_image(input_path, datetime_exif, exiftool_path)
+    import subprocess
+    import time
+    if exiftool_path is None:
+        exiftool_path = get_bin_path('exiftool.exe')
+    # Espera hasta que el archivo exista y esté liberado
+    intentos = 0
+    max_intentos = 10
+    while not os.path.exists(input_path) and intentos < max_intentos:
+        time.sleep(0.1)
+        intentos += 1
+    # Reintenta aplicar metadatos hasta 3 veces si hay error de acceso
+    for retry in range(3):
+        try:
+            if datetime_exif:
+                result = subprocess.run([
+                    exiftool_path,
+                    f"-AllDates={datetime_exif}",
+                    f"-FileModifyDate={datetime_exif}",
+                    "-overwrite_original",
+                    "-P",
+                    input_path
+                ], capture_output=True, text=True)
+                if result.returncode != 0:
+                    # Si es error de acceso/rename, espera y reintenta
+                    if ("Error renaming temporary file" in result.stderr or
+                        "GetFileTime error" in result.stderr or
+                        "Permission denied" in result.stderr):
+                        time.sleep(0.5)
+                        continue
+                    print("Exiftool error:", result.stderr)
+                    raise RuntimeError(f"Exiftool falló: {result.stderr}")
+            return True
+        except Exception as e:
+            if retry < 2:
+                time.sleep(0.5)
+                continue
+            raise
+    return True
 
 
 def cambiar_metadata_video(video_path, datetime_exif, exiftool_path=None):

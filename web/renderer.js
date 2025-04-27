@@ -108,6 +108,7 @@ function renderBatchTable() {
               <th>Fecha nueva</th>
               <th>Hora nueva</th>
               <th>Acción</th>
+              <th>Resultado</th>
             </tr>
           </thead>
           <tbody>`;
@@ -213,6 +214,7 @@ function renderBatchTable() {
           <input type="time" id="hora-${idx}" value="${item.hora || ""}" class="hora-input editable">
         </td>
         <td>${actionCell}</td>
+        <td class="batch-resultado-cell" id="batch-resultado-${idx}"></td>
       </tr>`;
   });
 
@@ -242,6 +244,13 @@ function renderBatchTable() {
   document
     .getElementById("procesar-batch-btn")
     .addEventListener("click", async function () {
+      // Estado visual: poner todos los resultados en "procesando"
+      document.querySelectorAll(".batch-resultado-cell").forEach(cell => {
+        cell.innerHTML = '<span class="batch-status batch-status-processing"><i class="fa-solid fa-spinner fa-spin"></i> Procesando...</span>';
+        cell.classList.remove("batch-status-success", "batch-status-error");
+        cell.classList.add("batch-status-processing");
+      });
+
       // Lee el valor de cada selector de acción
       window.batchMeta.forEach((item, idx) => {
         const accionSel = document.getElementById(`accion-${idx}`);
@@ -301,6 +310,20 @@ function renderBatchTable() {
 
 // Función para mostrar los resultados del procesamiento del batch
 function mostrarResultadosBatch(resultados) {
+  resultados.forEach((res, idx) => {
+    const cell = document.getElementById(`batch-resultado-${idx}`);
+    if (!cell) return;
+    if (res.resultado.startsWith("✓")) {
+      cell.innerHTML = `<span class="batch-status batch-status-success"><i class="fa-solid fa-circle-check"></i> ${res.resultado}</span>`;
+      cell.classList.remove("batch-status-processing", "batch-status-error");
+      cell.classList.add("batch-status-success");
+    } else {
+      cell.innerHTML = `<span class="batch-status batch-status-error"><i class="fa-solid fa-circle-xmark"></i> ${res.resultado}</span>`;
+      cell.classList.remove("batch-status-processing", "batch-status-success");
+      cell.classList.add("batch-status-error");
+    }
+  });
+
   const batchDiv = document.getElementById("archivos-table-div");
   if (!batchDiv) return;
 
