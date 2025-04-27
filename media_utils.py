@@ -102,6 +102,11 @@ def extract_datetime_from_filename(filename):
         t = match_hora3.group(1)
         hora = f"{t[:2]}:{t[2:4]}:{t[4:6]}"
         return fecha, hora
+    match_hora4 = re.search(r'_(\d{6})-', base)
+    if match_hora4:
+        t = match_hora4.group(1)
+        hora = f"{t[:2]}:{t[2:4]}:{t[4:6]}"
+        return fecha, hora
     hora = None
     return fecha, hora
 

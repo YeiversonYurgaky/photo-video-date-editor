@@ -4,7 +4,6 @@ import sys
 from dotenv import load_dotenv
 from media_utils import (
     extract_datetime_from_filename,
-    process_image,
     process_video,
     get_bin_path,
     cambiar_metadata_imagen,
