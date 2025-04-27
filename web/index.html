@@ -35,113 +35,14 @@
       <div class="container form-panel">
         <h1>
           <i class="fa-solid fa-pen-ruler" style="margin-right: 10px"></i>Editor
-          Unificado de Metadatos
+          de Metadatos
         </h1>
-        <!-- <button id="abrir-output-btn" style="background:#10b981;color:#fff;margin-bottom:10px;padding:7px 16px;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">
-          <i class="fa-solid fa-folder-open"></i> Abrir carpeta de salida
-        </button> -->
-        <!-- Botón de carpeta de salida eliminado, ya no es necesario -->
         <div class="section" id="file-section">
-          <label for="file-path"
-            ><i class="fa-solid fa-file-lines"></i> Archivo de entrada:</label
-          >
           <div class="input-group">
             <button id="select-file-btn" type="button">
               <i class="fa-solid fa-file-import"></i> Seleccionar archivo
             </button>
-            <input
-              style="width: 1rem;"
-              type="text"
-              id="file-path"
-              placeholder="Ruta del archivo"
-              readonly
-              style="background: #f0f0f0"
-            />
           </div>
-        </div>
-        <div class="section" id="folder-section">
-          <label for="folder-path"
-            ><i class="fa-solid fa-folder"></i> Carpeta de entrada:</label
-          >
-          <div class="input-group">
-            <button id="select-folder-btn" type="button">
-              <i class="fa-solid fa-folder-open"></i> Seleccionar carpeta
-            </button>
-            <input
-            style="width: 1rem;"
-              type="text"
-              id="folder-path"
-              placeholder="Ruta de la carpeta"
-              readonly
-              style="background: #f0f0f0"
-            />
-          </div>
-          <div class="input-group">
-            <label for="tipo-carpeta" style="flex: 1"
-              ><i class="fa-solid fa-filter"></i> Tipo de archivo a procesar
-              (solo para carpetas):</label
-            >
-            <select id="tipo-carpeta" style="flex: 1">
-              <option value="ambos">Imágenes y Videos</option>
-              <option value="imagen">Solo Imágenes</option>
-              <option value="video">Solo Videos</option>
-            </select>
-          </div>
-        </div>
-        <div class="section">
-          <div class="input-group">
-            <label style="flex: 1">
-              <input 
-                style="width: 1rem;"
-                type="radio"
-                name="modo-fecha"
-                id="modo-fecha-extraida"
-                value="extraida"
-                checked
-              />
-              <i class="fa-regular fa-calendar-check"></i> Usar fecha extraída
-            </label>
-            <label style="flex: 1">
-              <input
-                type="radio"
-                name="modo-fecha"
-                id="modo-fecha-manual"
-                value="manual"
-              />
-              <i class="fa-solid fa-calendar-pen"></i> Usar fecha manual
-            </label>
-          </div>
-          <div class="input-group">
-            <input
-              style="width: 1rem;"
-              type="text"
-              id="fecha-extraida"
-              placeholder="Fecha extraída"
-              readonly
-              style="background: #f0f0f0"
-            />
-            <input
-              style="width: 1rem;"
-              type="text"
-              id="hora-extraida"
-              placeholder="Hora extraída"
-              readonly
-              style="background: #f0f0f0"
-            />
-          </div>
-          <div class="input-group">
-            <input type="datetime-local" id="fecha-hora-manual" />
-          </div>
-        </div>
-        <div class="section">
-          <button id="procesar-btn">
-            <i class="fa-solid fa-gears"></i> Procesar
-          </button>
-        </div>
-        <div class="section">
-          <button id="cambiar-meta-video-btn">
-            <i class="fa-solid fa-film"></i> Cambiar metadata de video
-          </button>
         </div>
       </div>
       <div class="container output-panel">

@@ -61,13 +61,57 @@
     box-sizing: border-box;
     margin: 0;
     overflow: hidden;
+    align-items: center;
   }
   
   .form-panel {
-    flex: 0 0 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
     min-width: 16.25rem;
     max-width: 24.75rem;
     padding: 20px;
+    height: 60%;
+  }
+  
+  .form-panel h1 {
+    margin-bottom: 2.5rem;
+    text-align: left;
+  }
+  
+  .form-panel .section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+  
+  .form-panel .input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .form-panel #select-file-btn {
+    align-self: center;
+    font-size: 1.35rem;
+    padding: 1.1rem 2.2rem;
+    border-radius: 12px;
+    background: #10b981;
+    color: #fff;
+    border: none;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.08);
+    transition: background 0.2s, transform 0.2s;
+    cursor: pointer;
+  }
+  
+  .form-panel #select-file-btn:hover {
+    background: #059669;
+    transform: scale(1.04);
   }
   
   .output-panel {
@@ -259,17 +303,18 @@
   }
   
   .archivos-table th:nth-child(1), .archivos-table td:nth-child(1) { /* Preview */
-    width: 5rem;
-    min-width: 4rem;
-    max-width: 5.5rem;
+    width: 80px;
+    min-width: 64px;
+    max-width: 88px;
   }
   .archivos-table th:nth-child(2), .archivos-table td:nth-child(2) { /* Archivo */
-    max-width: 3.75rem;
+    max-width: 60px;
   }
   .archivos-table th:nth-child(3), .archivos-table td:nth-child(3),
   .archivos-table th:nth-child(5), .archivos-table td:nth-child(5) { /* Fechas */
     width: 110px;
     max-width: 110px;
+    padding: 10px;
   }
   .archivos-table th:nth-child(4), .archivos-table td:nth-child(4),
   .archivos-table th:nth-child(6), .archivos-table td:nth-child(6) { /* Horas */
@@ -279,6 +324,7 @@
   .archivos-table th:nth-child(7), .archivos-table td:nth-child(7) { /* Acción */
     width: 140px;
     max-width: 140px;
+    padding: 10px;
   }
   
   .archivo-nombre-td, .file-name {
@@ -342,7 +388,7 @@
   
   .archivos-table tbody tr:last-child td {
     border-bottom: none;
-    padding: 0.625rem;
+    padding: 10px;
   }
 
   #archivos-table-div ul {
@@ -350,72 +396,96 @@
   }
   
   /* Estilos para preview de archivos */
-  .preview-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 4.5rem;
-    min-width: 3.5rem;
-    max-width: 5rem;
-    height: 4.5rem;
-    min-height: 3.5rem;
-    max-height: 5rem;
-    background: #f3f4f6;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    box-shadow: 0 1px 6px 0 rgba(0,0,0,0.04);
-    margin: 0 auto;
-  }
-  
-  .preview-container img, .preview-container video {
-    max-width: 100%;
-    max-height: 100%;
-    border-radius: 0.5rem;
-    object-fit: cover;
-    display: block;
-  }
-  
-  .preview-container.no-preview {
-    background: #f3f4f6;
-    color: #b0b6be;
-    font-size: 2rem;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .preview-type-badge {
-    position: absolute;
-    bottom: 2px;
-    right: 2px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 8px;
-    color: white;
-  }
-  
-  .video-badge {
-    background: #3b82f6;
-  }
-  
-  .image-badge {
-    background: #10b981;
-  }
-  
-  .no-preview {
-    flex-direction: column;
-    gap: 2px;
-    color: #94a3b8;
-    font-size: 18px;
-  }
-  
-  .no-preview span {
-    font-size: 8px;
-    margin-top: 2px;
-  }
+  /* Estilos mejorados para preview de archivos */
+.preview-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 56px;
+  height: 56px; /* Aumentado para mejor proporción */
+  background: #f1f3f9;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  border: 1px solid rgba(203, 213, 225, 0.5);
+}
+
+.preview-thumbnail {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 7px;
+  object-fit: cover;
+  margin: 0 auto;
+  display: block;
+}
+
+.preview-type-badge {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  font-size: 11px;
+}
+
+/* Badge para videos - verde más moderno */
+.preview-type-badge.video-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Badge para imágenes - azul más moderno */
+.preview-type-badge.image-badge {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Mejorando los iconos FontAwesome */
+.preview-type-badge i.fa-solid {
+  font-size: 10px;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+}
+
+/* Efecto sutil cuando se pasa el mouse sobre el contenedor */
+.preview-container:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+  transition: all 0.2s ease;
+}
+
+/* Ajustes a los contenedores sin previsualización */
+.preview-container.no-preview {
+  background: linear-gradient(to bottom right, #f8fafc, #f1f5f9);
+  color: #94a3b8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.no-preview {
+  flex-direction: column;
+  gap: 2px;
+  color: #64748b;
+  font-size: 18px;
+}
+
+.no-preview span {
+  font-size: 9px;
+  margin-top: 2px;
+  font-weight: 500;
+  opacity: 0.8;
+}
   
   /* Estilos para el nombre del archivo */
   .file-name-container {
