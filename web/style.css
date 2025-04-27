@@ -21,6 +21,8 @@
     margin: 0;
     padding: 0;
     background-color: #f0f2f5;
+    height: 100%;
+    overflow: hidden;
   }
   
   .container {
@@ -29,6 +31,9 @@
     background-color: #fff;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
+    min-height: 0;
+    min-width: 0;
+    overflow: auto;
   }
   
   h1, h2 {
@@ -49,14 +54,19 @@
     flex-direction: row;
     gap: 20px;
     padding: 20px;
-    max-width: 1400px;
-    margin: 0 auto;
+    max-width: 100vw;
+    height: 100vh;
+    min-height: 0;
+    min-width: 0;
+    box-sizing: border-box;
+    margin: 0;
+    overflow: hidden;
   }
   
   .form-panel {
     flex: 0 0 320px;
-    min-width: 260px;
-    max-width: 380px;
+    min-width: 16.25rem;
+    max-width: 24.75rem;
     padding: 20px;
   }
   
@@ -73,7 +83,7 @@
   
   /* Secciones */
   .section {
-    margin-bottom: 20px;
+    margin-bottom: 0.5rem;
     padding: 15px;
     background-color: #fff;
     border-radius: var(--border-radius);
@@ -249,9 +259,9 @@
   }
   
   .archivos-table th:nth-child(1), .archivos-table td:nth-child(1) { /* Preview */
-    width: 40px;
-    min-width: 40px;
-    max-width: 40px;
+    width: 5rem;
+    min-width: 4rem;
+    max-width: 5.5rem;
   }
   .archivos-table th:nth-child(2), .archivos-table td:nth-child(2) { /* Archivo */
     max-width: 3.75rem;
@@ -292,7 +302,6 @@
     align-items: center;
     gap: 8px;
     max-width: 240px;
-    overflow: hidden;
   }
   
   @media (max-width: 900px) {
@@ -333,6 +342,7 @@
   
   .archivos-table tbody tr:last-child td {
     border-bottom: none;
+    padding: 0.625rem;
   }
 
   #archivos-table-div ul {
@@ -341,21 +351,36 @@
   
   /* Estilos para preview de archivos */
   .preview-container {
-    width: 60px;
-    height: 40px;
-    position: relative;
-    border-radius: 4px;
-    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f1f5f9;
+    width: 4.5rem;
+    min-width: 3.5rem;
+    max-width: 5rem;
+    height: 4.5rem;
+    min-height: 3.5rem;
+    max-height: 5rem;
+    background: #f3f4f6;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 6px 0 rgba(0,0,0,0.04);
+    margin: 0 auto;
   }
   
-  .preview-thumbnail {
+  .preview-container img, .preview-container video {
     max-width: 100%;
     max-height: 100%;
+    border-radius: 0.5rem;
     object-fit: cover;
+    display: block;
+  }
+  
+  .preview-container.no-preview {
+    background: #f3f4f6;
+    color: #b0b6be;
+    font-size: 2rem;
+    justify-content: center;
+    align-items: center;
   }
   
   .preview-type-badge {
@@ -695,4 +720,41 @@
       gap: 10px;
       align-items: stretch;
     }
+  }
+
+  .batch-status-zone {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 1.5rem;
+  }
+
+  .batch-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    font-weight: 600;
+    font-size: 1.08rem;
+    border-radius: 2em;
+    padding: 0.5em 1.2em 0.5em 1.1em;
+    background: linear-gradient(90deg, #f3f4f6 60%, #e0e7ef 100%);
+    color: #2563eb;
+    box-shadow: 0 1px 8px 0 rgba(37,99,235,0.09);
+    border: 1.5px solid #c7d2fe;
+    letter-spacing: 0.01em;
+    transition: background 0.2s, color 0.2s;
+  }
+  .batch-status-processing {
+    background: linear-gradient(90deg, #f3f4f6 60%, #dbeafe 100%);
+    color: #2563eb;
+    border-color: #60a5fa;
+  }
+  .batch-status-processing i.fa-spinner {
+    font-size: 1.2em;
+    margin-right: 0.5em;
+    color: #2563eb;
+    animation: spin 1.2s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }

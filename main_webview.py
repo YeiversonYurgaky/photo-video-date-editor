@@ -302,7 +302,8 @@ class Api:
                     # Si la acción es solo extraer frame, NO modificar el video original
                     if accion == "extraer_frame":
                         try:
-                            output_dir = self.output_dir or os.path.dirname(path)
+                            output_dir = self.output_dir or os.path.dirname(
+                                path)
                             if not os.path.exists(output_dir):
                                 os.makedirs(output_dir)
                             output_img = os.path.join(
@@ -351,4 +352,4 @@ if __name__ == '__main__':
     api = Api()
     webview.create_window('Editor Unificado de Metadatos', 'web/index.html',
                           js_api=api, width=950, height=670, resizable=True)
-    webview.start(debug=False)
+    webview.start(debug=True)
