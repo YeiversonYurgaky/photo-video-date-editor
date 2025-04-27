@@ -1,14 +1,13 @@
 import webview
 import os
-import shutil
 import sys
 from dotenv import load_dotenv
 from media_utils import (
     extract_datetime_from_filename,
     process_image,
     process_video,
-    get_unique_output_path,
     get_bin_path,
+    cambiar_metadata_imagen,
     cambiar_metadata_video
 )
 
@@ -53,7 +52,7 @@ class Api:
         fecha, hora = extract_datetime_from_filename(input_path)
         return {"fecha": fecha, "hora": hora}
 
-    def procesar_archivo(self, input_path, tipo_archivo, modo_fecha, fecha_manual, hora_manual):
+    def procesar_archivo(self, input_path, tipo_archivo, modo_fecha, fecha_manual, hora_manual, accion=None):
         # modo_fecha: 'extraida' o 'manual'
         if modo_fecha == 'extraida':
             res = self.extraer_fecha_hora(input_path)
@@ -64,31 +63,29 @@ class Api:
             hora_final = hora_manual or "12:00:00"
         base = os.path.splitext(os.path.basename(input_path))[0]
         ext = os.path.splitext(input_path)[1].lower()
-        output_path = get_unique_output_path(self.output_dir, base, ext)
-        # Antes de copiar, si output_path existe, bórralo (para evitar conflicto con exiftool)
-        if os.path.exists(output_path):
-            try:
-                os.remove(output_path)
-            except Exception as e:
-                return {"success": False, "msg": f"❌ No se pudo eliminar archivo previo: {output_path}. {str(e)}"}
-        datetime_exif = f"{fecha_final} {hora_final}" if fecha_final else None
-        try:
-            if tipo_archivo == "imagen":
-                shutil.copy(input_path, output_path)
-                if datetime_exif:
-                    process_image(input_path, output_path,
-                                  datetime_exif, self.exiftool_path)
-                    return {"success": True, "msg": f"✓ Metadatos aplicados a imagen: {output_path}"}
-                else:
-                    return {"success": False, "msg": "⚠️ No se aplicó metadata por falta de fecha."}
-            elif tipo_archivo == "video":
-                process_video(input_path, output_path,
-                              datetime_exif, self.exiftool_path, self.ffmpeg_path)
-                return {"success": True, "msg": f"✓ Imagen extraída y metadatos aplicados: {output_path}"}
+        if tipo_archivo == "video":
+            # Determina la acción a realizar
+            if not accion:
+                accion = "modificar_video"
+            if accion == "modificar_video":
+                datetime_exif = f"{fecha_final} {hora_final}"
+                cambiar_metadata_video(
+                    input_path, datetime_exif, self.exiftool_path)
+                return {"success": True, "msg": f"✓ Metadatos aplicados a video: {input_path}"}
             else:
-                return {"success": False, "msg": "❌ Tipo de archivo no soportado."}
-        except Exception as e:
-            return {"success": False, "msg": f"❌ Error: {str(e)}"}
+                return {"success": False, "msg": "❌ Acción no soportada para video."}
+        elif tipo_archivo == "imagen":
+            if not accion:
+                accion = "modificar_imagen"
+            if accion == "modificar_imagen":
+                datetime_exif = f"{fecha_final} {hora_final}"
+                cambiar_metadata_imagen(
+                    input_path, datetime_exif, self.exiftool_path)
+                return {"success": True, "msg": f"✓ Metadatos aplicados a imagen: {input_path}"}
+            else:
+                return {"success": False, "msg": "❌ Acción no soportada para imagen."}
+        else:
+            return {"success": False, "msg": "❌ Tipo de archivo no soportado."}
 
     def procesar_carpeta(self, folder_path, tipo_archivo, modo_fecha, fecha_manual, hora_manual):
         if tipo_archivo == "imagen":
@@ -110,37 +107,30 @@ class Api:
                     h = hora_manual or "12:00:00"
                 base = os.path.splitext(os.path.basename(input_path))[0]
                 ext = os.path.splitext(input_path)[1].lower()
-                output_path = get_unique_output_path(self.output_dir, base, ext)
-                # Antes de copiar, si output_path existe, bórralo
-                if os.path.exists(output_path):
+                if tipo_archivo == "video":
+                    datetime_exif = f"{f} {h}" if f else None
                     try:
-                        os.remove(output_path)
+                        cambiar_metadata_video(
+                            input_path, datetime_exif, self.exiftool_path)
+                        logs.append(
+                            f"✓ Metadatos aplicados a video: {input_path}")
                     except Exception as e:
-                        logs.append(f"❌ No se pudo eliminar archivo previo: {output_path}. {str(e)}")
-                        continue
-                datetime_exif = f"{f} {h}" if f else None
-                try:
-                    if tipo_archivo == "imagen":
-                        shutil.copy(input_path, output_path)
-                        if datetime_exif:
-                            process_image(input_path, output_path,
-                                          datetime_exif, self.exiftool_path)
-                            logs.append(
-                                f"✓ Metadatos aplicados a imagen: {output_path}")
-                        else:
-                            logs.append(
-                                f"⚠️ No se aplicó metadata por falta de fecha para {file}.")
-                    elif tipo_archivo == "video":
-                        process_video(input_path, output_path,
-                                      datetime_exif, self.exiftool_path, self.ffmpeg_path)
                         logs.append(
-                            f"✓ Imagen extraída y metadatos aplicados: {output_path}")
-                    else:
+                            f"❌ Error aplicando metadata: {str(e)}")
+                elif tipo_archivo == "imagen":
+                    datetime_exif = f"{f} {h}" if f else None
+                    try:
+                        cambiar_metadata_imagen(
+                            input_path, datetime_exif, self.exiftool_path)
                         logs.append(
-                            f"❌ Tipo de archivo no soportado para {file}.")
-                    success += 1
-                except Exception as e:
-                    logs.append(f"❌ Error en {file}: {str(e)}")
+                            f"✓ Metadatos aplicados a imagen: {input_path}")
+                    except Exception as e:
+                        logs.append(
+                            f"❌ Error aplicando metadata: {str(e)}")
+                else:
+                    logs.append(
+                        f"❌ Tipo de archivo no soportado para {file}.")
+                success += 1
                 count += 1
         logs.append(
             f"--- RESUMEN ---\nTotal de archivos procesados: {count}\nArchivos modificados exitosamente: {success}")
@@ -271,6 +261,7 @@ class Api:
                     svg = '''<svg xmlns='http://www.w3.org/2000/svg' width='60' height='40'><rect width='100%' height='100%' fill='#eee'/><text x='50%' y='50%' font-size='10' text-anchor='middle' fill='#888' dy='.3em'>Sin preview</text></svg>'''
                     thumb = f"data:image/svg+xml;base64,{base64.b64encode(svg.encode('utf-8')).decode('utf-8')}"
                     thumb_log = f"❌ Error leyendo imagen: {str(e)}"
+            print(f"{path} -> fecha: {fecha}, hora: {hora}")
             results.append({
                 "path": path,
                 "fecha": fecha,
@@ -282,9 +273,6 @@ class Api:
         return results
 
     def procesar_batch(self, archivos):
-        import os
-        from dotenv import load_dotenv
-        load_dotenv()
         # Recibe lista de dicts: {path, fecha, hora, accion}
         resultados = []
         for archivo in archivos:
@@ -294,59 +282,53 @@ class Api:
             accion = archivo.get("accion", "modificar_imagen")
             ext = os.path.splitext(path)[1].lower()
             base = os.path.splitext(os.path.basename(path))[0]
-            output_path = get_unique_output_path(self.output_dir, base, ext)
-            # Antes de copiar, si output_path existe, bórralo
-            if os.path.exists(output_path):
-                try:
-                    os.remove(output_path)
-                except Exception as e:
-                    res = f"❌ No se pudo eliminar archivo previo: {output_path}. {str(e)}"
-                    resultados.append({"path": path, "resultado": res})
-                    continue
             try:
                 # Si la fecha está vacía, usar la fecha actual
                 if not fecha:
                     from datetime import datetime
-                    now = datetime.now()
-                    fecha = now.strftime("%Y:%m:%d")
-                    hora = now.strftime("%H:%M:%S")
-                datetime_exif = f"{fecha} {hora}" if fecha else None
-                if ext in [".jpg", ".jpeg", ".png", ".bmp", ".gif"]:
-                    try:
-                        process_image(path, output_path, datetime_exif, self.exiftool_path)
-                        res = f"✓ Imagen modificada: {output_path}"
-                    except Exception as e:
-                        res = f"❌ Error modificando imagen: {str(e)}"
+                    fecha = datetime.now().strftime('%Y:%m:%d')
+                    hora = datetime.now().strftime('%H:%M:%S')
+                # Si la hora está vacía pero la fecha existe, usar hora por defecto
+                if fecha and (not hora or hora.strip() == ""):
+                    hora = "12:00:00"
+                datetime_exif = f"{fecha} {hora}"
+                if ext in [".jpg", ".jpeg", ".png"]:
+                    cambiar_metadata_imagen(
+                        path, datetime_exif, self.exiftool_path)
+                    res = f"✓ Metadatos aplicados a imagen: {path}"
                 elif ext in [".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv", ".webm"]:
-                    try:
-                        process_video(path, output_path, datetime_exif, self.exiftool_path, self.ffmpeg_path)
-                        res = f"✓ Video modificado: {output_path}"
-                    except Exception as e:
-                        res = f"❌ Error modificando video: {str(e)}"
+                    cambiar_metadata_video(
+                        path, datetime_exif, self.exiftool_path)
+                    res = f"✓ Metadatos aplicados a video: {path}"
+                    # Extraer frame solo si la acción es 'extraer_frame'
+                    if accion == "extraer_frame":
+                        try:
+                            output_dir = self.output_dir or os.path.dirname(
+                                path)
+                            if not os.path.exists(output_dir):
+                                os.makedirs(output_dir)
+                            output_img = os.path.join(
+                                output_dir, f"{base}_frame.jpg")
+                            # Usa process_video utilitario para extraer el frame con ffmpeg y calidad q:v=2
+                            from media_utils import process_video, cambiar_metadata_imagen
+                            process_video(path, output_img, None,
+                                          self.exiftool_path, self.ffmpeg_path)
+                            # Aplica los metadatos a la imagen extraída
+                            try:
+                                cambiar_metadata_imagen(
+                                    output_img, datetime_exif, self.exiftool_path)
+                                res += f" | Metadatos aplicados a frame"
+                            except Exception as e:
+                                res += f" | ❌ Error aplicando metadatos a frame: {str(e)}"
+                            res += f" | Frame extraído: {output_img}"
+                        except Exception as e:
+                            res += f" | ❌ Error extrayendo frame: {str(e)}"
                 else:
                     res = f"Tipo de archivo no soportado: {path}"
             except Exception as e:
                 res = f"❌ Error: {str(e)}"
             resultados.append({"path": path, "resultado": res})
         return resultados
-
-    def cambiar_metadata_video(self, video_path, fecha, hora):
-        """
-        Cambia la metadata de un video directamente usando exiftool.
-        Args:
-            video_path (str): Ruta al archivo de video.
-            fecha (str): Fecha en formato 'YYYY:MM:DD'.
-            hora (str): Hora en formato 'HH:MM:SS'.
-        Returns:
-            dict: Resultado de la operación.
-        """
-        datetime_exif = f"{fecha} {hora}"
-        try:
-            cambiar_metadata_video(
-                video_path, datetime_exif, self.exiftool_path)
-            return {"success": True, "msg": f"✓ Metadata cambiada para: {video_path}"}
-        except Exception as e:
-            return {"success": False, "msg": f"❌ Error: {str(e)}"}
 
     def abrir_output_dir(self):
         import os
@@ -366,4 +348,4 @@ if __name__ == '__main__':
     api = Api()
     webview.create_window('Editor Unificado de Metadatos', 'web/index.html',
                           js_api=api, width=950, height=670, resizable=True)
-    webview.start(debug=True)
+    webview.start(debug=False)

@@ -145,8 +145,8 @@ function renderBatchTable() {
 
       actionCell = `
         <select id="accion-${idx}" class="action-select">
-          <option value="extraer_imagen">Extraer imagen</option>
-          <option value="modificar_video">Modificar video</option>
+          <option value="modificar_video" ${item.accion === "modificar_video" ? "selected" : ""}>Solo metadata</option>
+          <option value="extraer_frame" ${item.accion === "extraer_frame" ? "selected" : ""}>Extraer frame</option>
         </select>`;
     } else if (["jpg", "jpeg", "png", "bmp", "gif"].includes(ext)) {
       // Mostrar preview para imágenes
@@ -201,22 +201,16 @@ function renderBatchTable() {
           </div>
         </td>
         <td>
-          <input type="text" id="fecha-extraida-${idx}" value="${
-      item.fecha || ""
-    }" 
-            class="fecha-input" readonly>
+          <input type="text" id="fecha-extraida-${idx}" value="${item.fecha || ""}" class="fecha-input" readonly>
         </td>
         <td>
-          <input type="text" id="hora-extraida-${idx}" value="${
-      item.hora || ""
-    }" 
-            class="hora-input" readonly>
+          <input type="text" id="hora-extraida-${idx}" value="${item.hora || ""}" class="hora-input" readonly>
         </td>
         <td>
-          <input type="date" id="fecha-${idx}" value="" class="fecha-input editable">
+          <input type="date" id="fecha-${idx}" value="${(item.fecha && item.fecha.length===10 ? item.fecha.replace(/:/g,'-') : "")}" class="fecha-input editable">
         </td>
         <td>
-          <input type="time" id="hora-${idx}" value="" class="hora-input editable">
+          <input type="time" id="hora-${idx}" value="${item.hora || ""}" class="hora-input editable">
         </td>
         <td>${actionCell}</td>
       </tr>`;
@@ -248,6 +242,12 @@ function renderBatchTable() {
   document
     .getElementById("procesar-batch-btn")
     .addEventListener("click", async function () {
+      // Lee el valor de cada selector de acción
+      window.batchMeta.forEach((item, idx) => {
+        const accionSel = document.getElementById(`accion-${idx}`);
+        if (accionSel) item.accion = accionSel.value;
+      });
+
       // Mostrar cargando
       this.innerHTML =
         '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
@@ -255,21 +255,27 @@ function renderBatchTable() {
 
       // Recopilar datos
       let archivos = window.batchMeta.map((item, idx) => {
+        // Lee los valores actuales de los inputs
         let fecha = document.getElementById(`fecha-${idx}`).value;
         let hora = document.getElementById(`hora-${idx}`).value;
-
-        let accion = "modificar_imagen";
-        const ext = item.path.split(".").pop().toLowerCase();
-        if (["mp4", "mov", "avi"].includes(ext)) {
-          const accionSelect = document.getElementById(`accion-${idx}`);
-          accion = accionSelect ? accionSelect.value : "modificar_video";
+        // Si el usuario no editó nada, usar los extraídos
+        if (!fecha) {
+          let extraida = document.getElementById(`fecha-extraida-${idx}`).value;
+          // Convertir a formato YYYY:MM:DD si viene en YYYY-MM-DD
+          fecha = extraida ? extraida.replace(/-/g, ':') : "";
+        } else {
+          // Convertir a formato YYYY:MM:DD
+          fecha = fecha.replace(/-/g, ':');
+        }
+        if (!hora) {
+          hora = document.getElementById(`hora-extraida-${idx}`).value;
         }
 
         return {
           path: item.path,
           fecha: fecha,
           hora: hora,
-          accion,
+          accion: item.accion,
         };
       });
 
@@ -527,13 +533,12 @@ document.addEventListener("click", function (e) {
     });
     window.batchMeta = rows; // Actualiza la tabla si quieres
     const now = new Date();
-    const pad = (n) => n.toString().padStart(2, "0");
     const horaActual =
-      pad(now.getHours()) +
+      (now.getHours().toString().padStart(2, "0")) +
       ":" +
-      pad(now.getMinutes()) +
+      (now.getMinutes().toString().padStart(2, "0")) +
       ":" +
-      pad(now.getSeconds());
+      (now.getSeconds().toString().padStart(2, "0"));
     rows.forEach((item, idx) => {
       const fechaInput = document.getElementById(`fecha-${idx}`);
       const horaInput = document.getElementById(`hora-${idx}`);
@@ -548,7 +553,4 @@ document.addEventListener("click", function (e) {
   }
 });
 
-// --- Abrir carpeta de salida ---
-document.getElementById("abrir-output-btn").onclick = async function () {
-  await window.pywebview.api.abrir_output_dir();
-};
+// Botón y función de carpeta de salida eliminados, ya no es necesario

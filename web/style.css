@@ -136,15 +136,6 @@
     font-size: 16px;
   }
   
-  #abrir-output-btn {
-    background-color: var(--success-color);
-    margin-bottom: 15px;
-  }
-  
-  #abrir-output-btn:hover {
-    background-color: var(--success-hover);
-  }
-  
   #procesar-btn {
     background-color: var(--success-color);
     padding: 12px 20px;

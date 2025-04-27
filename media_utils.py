@@ -92,7 +92,7 @@ def extract_datetime_from_filename(filename):
         h, mi, s = match_hora.groups()
         hora = f"{h.zfill(2)}:{mi.zfill(2)}:{s.zfill(2)}"
         return fecha, hora
-    match_hora2 = re.search(r'_(\d{9})\.', base)
+    match_hora2 = re.search(r'_(\d{9})$', base)
     if match_hora2:
         t = match_hora2.group(1)
         hora = f"{t[:2]}:{t[2:4]}:{t[4:6]}"
@@ -114,18 +114,10 @@ def get_bin_path(filename):
     return os.path.join(base_path, 'bin', filename)
 
 
-def process_image(input_path, output_path, datetime_exif, exiftool_path=None):
+def process_image(input_path, datetime_exif, exiftool_path=None):
     import subprocess
-    import shutil
     if exiftool_path is None:
         exiftool_path = get_bin_path('exiftool.exe')
-    # Si output_path existe, bórralo antes de copiar (garantía extra)
-    if os.path.exists(output_path):
-        try:
-            os.remove(output_path)
-        except Exception as e:
-            raise RuntimeError(f"No se pudo eliminar archivo previo antes de copiar: {output_path}. {str(e)}")
-    shutil.copy(input_path, output_path)
     if datetime_exif:
         result = subprocess.run([
             exiftool_path,
@@ -134,7 +126,7 @@ def process_image(input_path, output_path, datetime_exif, exiftool_path=None):
             "-overwrite_original",
             "-P",
             "-api", "QuickTimeUTC=1",
-            output_path
+            input_path
         ], capture_output=True, text=True)
         if result.returncode != 0:
             print("Exiftool error:", result.stderr)
@@ -168,55 +160,43 @@ def process_video(input_path, output_path, datetime_exif, exiftool_path=None, ff
     return True
 
 
-def get_unique_output_path(output_dir, base_name, ext):
-    output_path = os.path.join(output_dir, base_name + ext)
-    count = 1
-    while os.path.exists(output_path):
-        output_path = os.path.join(output_dir, f"{base_name}_{count}{ext}")
-        count += 1
-    return output_path
-
-
-def cambiar_metadata_video(video_path, datetime_exif, exiftool_path=None, output_dir=None):
+def cambiar_metadata_imagen(input_path, datetime_exif, exiftool_path=None):
     """
-    Cambia la metadata (fecha/hora) de un video, guardando una copia modificada en output_dir.
+    Cambia la metadata (fecha/hora) de una imagen usando exiftool.
+    Args:
+        input_path (str): Ruta al archivo de imagen original.
+        datetime_exif (str): Fecha y hora en formato 'YYYY:MM:DD HH:MM:SS'.
+        exiftool_path (str, opcional): Ruta a exiftool.exe. Si no se proporciona, se busca automáticamente.
+    Returns:
+        bool: True si la operación fue exitosa, lanza excepción si falla.
+    """
+    return process_image(input_path, datetime_exif, exiftool_path)
+
+
+def cambiar_metadata_video(video_path, datetime_exif, exiftool_path=None):
+    """
+    Cambia la metadata (fecha/hora) de un video directamente usando exiftool.
     Args:
         video_path (str): Ruta al archivo de video.
         datetime_exif (str): Fecha y hora en formato 'YYYY:MM:DD HH:MM:SS'.
         exiftool_path (str, opcional): Ruta a exiftool.exe. Si no se proporciona, se busca automáticamente.
-        output_dir (str, opcional): Directorio de salida para la copia modificada. Si es None, modifica el original.
     Returns:
-        str: Ruta del archivo modificado.
+        bool: True si la operación fue exitosa, lanza excepción si falla.
     """
     import subprocess
-    import os
-    import shutil
     if exiftool_path is None:
         exiftool_path = get_bin_path('exiftool.exe')
-    # Si output_dir está definido, crea una copia antes de modificar
-    if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
-        base = os.path.basename(video_path)
-        name, ext = os.path.splitext(base)
-        out_path = os.path.join(output_dir, f"{name}_mod{ext}")
-        # Evita sobrescribir si ya existe
-        count = 1
-        while os.path.exists(out_path):
-            out_path = os.path.join(output_dir, f"{name}_mod{count}{ext}")
-            count += 1
-        shutil.copy2(video_path, out_path)
-    else:
-        out_path = video_path
-    result = subprocess.run([
+    args = [
         exiftool_path,
         f"-AllDates={datetime_exif}",
         f"-FileModifyDate={datetime_exif}",
         "-overwrite_original",
         "-P",
         "-api", "QuickTimeUTC=1",
-        out_path
-    ], capture_output=True, text=True)
+        video_path
+    ]
+    result = subprocess.run(args, capture_output=True, text=True)
     if result.returncode != 0:
         print("Exiftool error:", result.stderr)
         raise RuntimeError(f"Exiftool falló: {result.stderr}")
-    return out_path
+    return True
