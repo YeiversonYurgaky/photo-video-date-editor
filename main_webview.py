@@ -1,3 +1,37 @@
+# --- Utilidad para ocultar consola en subprocesos en Windows ---
+def get_creationflags():
+    import sys
+    import subprocess
+    if sys.platform == "win32":
+        return getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    return 0
+
+# --- Parche para ocultar consola en ffmpeg-python en Windows ---
+import sys as _sys
+if _sys.platform == "win32":
+    import subprocess as _subprocess
+    import ffmpeg as _ffmpeg
+    from ffmpeg._run import output_operator as _output_operator
+    @_output_operator()
+    def _patched_run_async(
+        stream_spec,
+        cmd='ffmpeg',
+        pipe_stdin=False,
+        pipe_stdout=False,
+        pipe_stderr=False,
+        quiet=False,
+        overwrite_output=False,
+    ):
+        creationflags = _subprocess.CREATE_NO_WINDOW
+        args = _ffmpeg._run.compile(stream_spec, cmd, overwrite_output=overwrite_output)
+        stdin_stream = _subprocess.PIPE if pipe_stdin else None
+        stdout_stream = _subprocess.PIPE if pipe_stdout or quiet else None
+        stderr_stream = _subprocess.PIPE if pipe_stderr or quiet else None
+        return _subprocess.Popen(
+            args, stdin=stdin_stream, stdout=stdout_stream, stderr=stderr_stream, creationflags=creationflags
+        )
+    _ffmpeg._run.run_async = _patched_run_async
+
 import webview
 import os
 import sys
@@ -211,6 +245,7 @@ class Api:
         import base64
         results = []
         thumb_logs = []
+        # flags = get_creationflags()  # Ya no se usa aquí, el parche global lo maneja
         for path in file_paths:
             try:
                 fecha, hora = extract_datetime_from_filename(path)
@@ -352,4 +387,4 @@ if __name__ == '__main__':
     api = Api()
     webview.create_window('Editor Unificado de Metadatos', 'web/index.html',
                           js_api=api, width=950, height=670, resizable=True)
-    webview.start(debug=True)
+    webview.start(debug=False)

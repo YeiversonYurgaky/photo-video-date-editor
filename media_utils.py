@@ -119,8 +119,17 @@ def get_bin_path(filename):
     return os.path.join(base_path, 'bin', filename)
 
 
+def get_creationflags():
+    import sys
+    import subprocess
+    if sys.platform == "win32":
+        return getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    return 0
+
+
 def process_image(input_path, datetime_exif, exiftool_path=None):
     import subprocess
+    flags = get_creationflags()
     if exiftool_path is None:
         exiftool_path = get_bin_path('exiftool.exe')
     if datetime_exif:
@@ -132,7 +141,7 @@ def process_image(input_path, datetime_exif, exiftool_path=None):
             "-P",
             "-api", "QuickTimeUTC=1",
             input_path
-        ], capture_output=True, text=True)
+        ], capture_output=True, text=True, creationflags=flags)
         if result.returncode != 0:
             print("Exiftool error:", result.stderr)
             raise RuntimeError(f"Exiftool falló: {result.stderr}")
@@ -141,6 +150,7 @@ def process_image(input_path, datetime_exif, exiftool_path=None):
 
 def process_video(input_path, output_path, datetime_exif, exiftool_path=None, ffmpeg_path=None):
     import subprocess
+    flags = get_creationflags()
     if ffmpeg_path is None:
         ffmpeg_path = get_bin_path('ffmpeg.exe')
     if exiftool_path is None:
@@ -148,7 +158,7 @@ def process_video(input_path, output_path, datetime_exif, exiftool_path=None, ff
     subprocess.run([
         ffmpeg_path, "-y", "-i", input_path,
         "-vframes", "1", "-q:v", "1", output_path
-    ], check=True)
+    ], check=True, creationflags=flags)
     if datetime_exif:
         result = subprocess.run([
             exiftool_path,
@@ -158,7 +168,7 @@ def process_video(input_path, output_path, datetime_exif, exiftool_path=None, ff
             "-P",
             "-api", "QuickTimeUTC=1",
             output_path
-        ], capture_output=True, text=True)
+        ], capture_output=True, text=True, creationflags=flags)
         if result.returncode != 0:
             print("Exiftool error:", result.stderr)
             raise RuntimeError(f"Exiftool falló: {result.stderr}")
@@ -177,6 +187,7 @@ def cambiar_metadata_imagen(input_path, datetime_exif, exiftool_path=None):
     """
     import subprocess
     import time
+    flags = get_creationflags()
     if exiftool_path is None:
         exiftool_path = get_bin_path('exiftool.exe')
     # Espera hasta que el archivo exista y esté liberado
@@ -196,7 +207,7 @@ def cambiar_metadata_imagen(input_path, datetime_exif, exiftool_path=None):
                     "-overwrite_original",
                     "-P",
                     input_path
-                ], capture_output=True, text=True)
+                ], capture_output=True, text=True, creationflags=flags)
                 if result.returncode != 0:
                     # Si es error de acceso/rename, espera y reintenta
                     if ("Error renaming temporary file" in result.stderr or
@@ -226,6 +237,7 @@ def cambiar_metadata_video(video_path, datetime_exif, exiftool_path=None):
         bool: True si la operación fue exitosa, lanza excepción si falla.
     """
     import subprocess
+    flags = get_creationflags()
     if exiftool_path is None:
         exiftool_path = get_bin_path('exiftool.exe')
     args = [
@@ -237,7 +249,7 @@ def cambiar_metadata_video(video_path, datetime_exif, exiftool_path=None):
         "-api", "QuickTimeUTC=1",
         video_path
     ]
-    result = subprocess.run(args, capture_output=True, text=True)
+    result = subprocess.run(args, capture_output=True, text=True, creationflags=flags)
     if result.returncode != 0:
         print("Exiftool error:", result.stderr)
         raise RuntimeError(f"Exiftool falló: {result.stderr}")
