@@ -283,6 +283,11 @@
   .archivos-table-wrapper {
     width: 100%;
     overflow-x: auto;
+    /* Añadimos scroll vertical y altura máxima */
+    max-height: 340px;
+    overflow-y: auto;
+    /* Suaviza el scroll visualmente */
+    scroll-behavior: smooth;
   }
   
   .archivos-table {

@@ -56,10 +56,7 @@ class Api:
             base_dir = sys._MEIPASS
         else:
             base_dir = os.path.dirname(os.path.abspath(__file__))
-        # Cargar rutas fijas desde .env
-
-        load_dotenv(os.path.join(base_dir, '.env'))
-        self.output_dir = os.getenv('OUTPUT_DIR')
+        # Ya no se carga .env ni OUTPUT_DIR
         # Inicializa rutas de ejecutables externos de forma dinámica
         self.exiftool_path = get_bin_path('exiftool.exe')
         self.ffmpeg_path = get_bin_path('ffmpeg.exe')
@@ -341,12 +338,12 @@ class Api:
                     # Si la acción es solo extraer frame, NO modificar el video original
                     if accion == "extraer_frame":
                         try:
-                            output_dir = self.output_dir or os.path.dirname(
-                                path)
+                            # Guardar el frame en el mismo directorio del video de entrada
+                            output_dir = os.path.dirname(path)
                             if not os.path.exists(output_dir):
                                 os.makedirs(output_dir)
                             output_img = os.path.join(
-                                output_dir, f"{base}_frame.jpg")
+                                output_dir, f"{base}.jpg")
                             process_video(path, output_img, None,
                                           self.exiftool_path, self.ffmpeg_path)
                             try:
@@ -374,16 +371,7 @@ class Api:
         return resultados
 
     def abrir_output_dir(self):
-        import os
-        import webbrowser
-        output_dir = self.output_dir
-        if output_dir and os.path.isdir(output_dir):
-            # En Windows, usa explorer.exe
-            if os.name == 'nt':
-                os.startfile(output_dir)
-            else:
-                webbrowser.open(f'file://{output_dir}')
-            return True
+        # Esta función ya no es necesaria
         return False
 
 
