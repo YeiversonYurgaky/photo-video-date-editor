@@ -58,6 +58,17 @@ def gregorian_date_to_exif_format(gregorian_date_str):
 
 def extract_datetime_from_filename(filename):
     base = os.path.splitext(os.path.basename(filename))[0]
+    # Busca el patrón: cualquier cosa, guion bajo, 8 dígitos, guion bajo
+    match_custom = re.search(r'_(\d{8})_', base)
+    if match_custom:
+        date_str = match_custom.group(1)
+        if is_persian_date(date_str):
+            fecha = persian_date_to_gregorian(date_str)
+        else:
+            fecha = gregorian_date_to_exif_format(date_str)
+        hora = None
+        return fecha, hora
+    # Luego busca cualquier 8 dígitos en el nombre
     match = re.search(r'(\d{8})', base)
     if match:
         date_str = match.group(1)
@@ -212,7 +223,7 @@ def cambiar_metadata_imagen(input_path, datetime_exif, exiftool_path=None):
                     # Si es error de acceso/rename, espera y reintenta
                     if ("Error renaming temporary file" in result.stderr or
                         "GetFileTime error" in result.stderr or
-                        "Permission denied" in result.stderr):
+                            "Permission denied" in result.stderr):
                         time.sleep(0.5)
                         continue
                     print("Exiftool error:", result.stderr)
@@ -249,7 +260,8 @@ def cambiar_metadata_video(video_path, datetime_exif, exiftool_path=None):
         "-api", "QuickTimeUTC=1",
         video_path
     ]
-    result = subprocess.run(args, capture_output=True, text=True, creationflags=flags)
+    result = subprocess.run(args, capture_output=True,
+                            text=True, creationflags=flags)
     if result.returncode != 0:
         print("Exiftool error:", result.stderr)
         raise RuntimeError(f"Exiftool falló: {result.stderr}")
