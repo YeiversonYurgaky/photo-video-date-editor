@@ -121,66 +121,6 @@ class Api:
         else:
             return {"success": False, "msg": "❌ Tipo de archivo no soportado."}
 
-    def procesar_carpeta(self, folder_path, tipo_archivo, modo_fecha, fecha_manual, hora_manual):
-        if tipo_archivo == "imagen":
-            valid_exts = ('.jpg', '.jpeg', '.png', '.bmp', '.gif')
-        else:
-            valid_exts = ('.mp4', '.mov', '.avi')
-        count = 0
-        success = 0
-        logs = []
-        for file in os.listdir(folder_path):
-            if file.lower().endswith(valid_exts):
-                input_path = os.path.join(folder_path, file)
-                if modo_fecha == 'extraida':
-                    res = self.extraer_fecha_hora(input_path)
-                    f = res['fecha']
-                    h = res['hora'] or "12:00:00"
-                else:
-                    f = fecha_manual
-                    h = hora_manual or "12:00:00"
-                base = os.path.splitext(os.path.basename(input_path))[0]
-                ext = os.path.splitext(input_path)[1].lower()
-                if tipo_archivo == "video":
-                    datetime_exif = f"{f} {h}" if f else None
-                    try:
-                        cambiar_metadata_video(
-                            input_path, datetime_exif, self.exiftool_path)
-                        logs.append(
-                            f"✓ Metadatos aplicados a video: {input_path}")
-                    except Exception as e:
-                        logs.append(
-                            f"❌ Error aplicando metadata: {str(e)}")
-                elif tipo_archivo == "imagen":
-                    datetime_exif = f"{f} {h}" if f else None
-                    try:
-                        cambiar_metadata_imagen(
-                            input_path, datetime_exif, self.exiftool_path)
-                        logs.append(
-                            f"✓ Metadatos aplicados a imagen: {input_path}")
-                    except Exception as e:
-                        logs.append(
-                            f"❌ Error aplicando metadata: {str(e)}")
-                else:
-                    logs.append(
-                        f"❌ Tipo de archivo no soportado para {file}.")
-                success += 1
-                count += 1
-        logs.append(
-            f"--- RESUMEN ---\nTotal de archivos procesados: {count}\nArchivos modificados exitosamente: {success}")
-        return {"success": True, "logs": logs}
-
-    def procesar_auto(self, path, modo_fecha, fecha_manual, hora_manual, tipo_carpeta=None):
-        import os
-        if os.path.isdir(path):
-            # Procesar carpeta con filtro
-            return self._procesar_carpeta_auto(path, modo_fecha, fecha_manual, hora_manual, tipo_carpeta)
-        elif os.path.isfile(path):
-            # Procesar archivo individual
-            return self._procesar_archivo_auto(path, modo_fecha, fecha_manual, hora_manual)
-        else:
-            return {"success": False, "msg": "❌ Ruta no válida."}
-
     def _procesar_archivo_auto(self, input_path, modo_fecha, fecha_manual, hora_manual):
         ext = os.path.splitext(input_path)[1].lower()
         imagen_exts = ('.jpg', '.jpeg', '.png', '.bmp', '.gif')
@@ -192,37 +132,6 @@ class Api:
         else:
             return {"success": False, "msg": f"❌ Extensión no soportada: {ext}"}
         return self.procesar_archivo(input_path, tipo, modo_fecha, fecha_manual, hora_manual)
-
-    def _procesar_carpeta_auto(self, folder_path, modo_fecha, fecha_manual, hora_manual, tipo_carpeta=None):
-        imagen_exts = ('.jpg', '.jpeg', '.png', '.bmp', '.gif')
-        video_exts = ('.mp4', '.mov', '.avi')
-        archivos = [f for f in os.listdir(
-            folder_path) if os.path.isfile(os.path.join(folder_path, f))]
-        logs = []
-        count = 0
-        success = 0
-        for file in archivos:
-            ext = os.path.splitext(file)[1].lower()
-            input_path = os.path.join(folder_path, file)
-            es_imagen = ext in imagen_exts
-            es_video = ext in video_exts
-            # Filtro según tipo_carpeta
-            if tipo_carpeta == "imagen" and not es_imagen:
-                continue
-            if tipo_carpeta == "video" and not es_video:
-                continue
-            if tipo_carpeta in (None, "ambos") and not (es_imagen or es_video):
-                continue
-            if es_imagen or es_video:
-                res = self._procesar_archivo_auto(
-                    input_path, modo_fecha, fecha_manual, hora_manual)
-                logs.append(res.get("msg", ""))
-                if res.get("success"):
-                    success += 1
-                count += 1
-        logs.append(
-            f"--- RESUMEN ---\nTotal de archivos procesados: {count}\nArchivos modificados exitosamente: {success}")
-        return {"success": True, "logs": logs}
 
     def is_file_or_dir(self, path):
         import os
