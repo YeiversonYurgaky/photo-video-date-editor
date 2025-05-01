@@ -1,15 +1,52 @@
-import webview
-import os
-import sys
-from dotenv import load_dotenv
+# --- Utilidad para ocultar consola en subprocesos en Windows ---
 from media_utils import (
     extract_datetime_from_filename,
-    process_image,
     process_video,
     get_bin_path,
     cambiar_metadata_imagen,
     cambiar_metadata_video
 )
+from dotenv import load_dotenv
+import sys
+import os
+import webview
+import sys as _sys
+
+
+def get_creationflags():
+    import sys
+    import subprocess
+    if sys.platform == "win32":
+        return getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    return 0
+
+
+# --- Parche para ocultar consola en ffmpeg-python en Windows ---
+if _sys.platform == "win32":
+    import subprocess as _subprocess
+    import ffmpeg as _ffmpeg
+    from ffmpeg._run import output_operator as _output_operator
+
+    @_output_operator()
+    def _patched_run_async(
+        stream_spec,
+        cmd='ffmpeg',
+        pipe_stdin=False,
+        pipe_stdout=False,
+        pipe_stderr=False,
+        quiet=False,
+        overwrite_output=False,
+    ):
+        creationflags = _subprocess.CREATE_NO_WINDOW
+        args = _ffmpeg._run.compile(
+            stream_spec, cmd, overwrite_output=overwrite_output)
+        stdin_stream = _subprocess.PIPE if pipe_stdin else None
+        stdout_stream = _subprocess.PIPE if pipe_stdout or quiet else None
+        stderr_stream = _subprocess.PIPE if pipe_stderr or quiet else None
+        return _subprocess.Popen(
+            args, stdin=stdin_stream, stdout=stdout_stream, stderr=stderr_stream, creationflags=creationflags
+        )
+    _ffmpeg._run.run_async = _patched_run_async
 
 
 class Api:
@@ -19,10 +56,7 @@ class Api:
             base_dir = sys._MEIPASS
         else:
             base_dir = os.path.dirname(os.path.abspath(__file__))
-        # Cargar rutas fijas desde .env
-
-        load_dotenv(os.path.join(base_dir, '.env'))
-        self.output_dir = os.getenv('OUTPUT_DIR')
+        # Ya no se carga .env ni OUTPUT_DIR
         # Inicializa rutas de ejecutables externos de forma dinámica
         self.exiftool_path = get_bin_path('exiftool.exe')
         self.ffmpeg_path = get_bin_path('ffmpeg.exe')
@@ -212,6 +246,7 @@ class Api:
         import base64
         results = []
         thumb_logs = []
+        # flags = get_creationflags()  # Ya no se usa aquí, el parche global lo maneja
         for path in file_paths:
             try:
                 fecha, hora = extract_datetime_from_filename(path)
@@ -293,35 +328,41 @@ class Api:
                     hora = "12:00:00"
                 datetime_exif = f"{fecha} {hora}"
                 if ext in [".jpg", ".jpeg", ".png"]:
-                    cambiar_metadata_imagen(
-                        path, datetime_exif, self.exiftool_path)
-                    res = f"✓ Metadatos aplicados a imagen: {path}"
+                    try:
+                        cambiar_metadata_imagen(
+                            path, datetime_exif, self.exiftool_path)
+                        res = f"✓ Metadatos aplicados a imagen: {path}"
+                    except Exception as e:
+                        res = f"❌ Error metadatos imagen: {str(e)}"
                 elif ext in [".mp4", ".mov", ".avi", ".mkv", ".wmv", ".flv", ".webm"]:
-                    cambiar_metadata_video(
-                        path, datetime_exif, self.exiftool_path)
-                    res = f"✓ Metadatos aplicados a video: {path}"
-                    # Extraer frame solo si la acción es 'extraer_frame'
+                    # Si la acción es solo extraer frame, NO modificar el video original
                     if accion == "extraer_frame":
                         try:
-                            output_dir = self.output_dir or os.path.dirname(
-                                path)
+                            # Guardar el frame en el mismo directorio del video de entrada
+                            output_dir = os.path.dirname(path)
                             if not os.path.exists(output_dir):
                                 os.makedirs(output_dir)
                             output_img = os.path.join(
-                                output_dir, f"{base}_frame.jpg")
-                            # Usa process_video utilitario para extraer el frame con ffmpeg y calidad q:v=2
+                                output_dir, f"{base}.jpg")
                             process_video(path, output_img, None,
                                           self.exiftool_path, self.ffmpeg_path)
-                            # Aplica los metadatos a la imagen extraída
                             try:
                                 cambiar_metadata_imagen(
                                     output_img, datetime_exif, self.exiftool_path)
-                                res += f" | Metadatos aplicados a frame"
+                                res = f"✓ Frame extraído y metadatos aplicados: {output_img}"
                             except Exception as e:
-                                res += f" | ❌ Error aplicando metadatos a frame: {str(e)}"
-                            res += f" | Frame extraído: {output_img}"
+                                res = f"❌ Error metadatos frame: {str(e)}"
                         except Exception as e:
-                            res += f" | ❌ Error extrayendo frame: {str(e)}"
+                            res = f"❌ Error extrayendo frame: {str(e)}"
+                    else:
+                        video_error = None
+                        try:
+                            cambiar_metadata_video(
+                                path, datetime_exif, self.exiftool_path)
+                            res = f"✓ Metadatos aplicados a video: {path}"
+                        except Exception as e:
+                            video_error = str(e)
+                            res = f"⚠️ No se pudieron modificar los metadatos del video: {video_error}"
                 else:
                     res = f"Tipo de archivo no soportado: {path}"
             except Exception as e:
@@ -330,16 +371,7 @@ class Api:
         return resultados
 
     def abrir_output_dir(self):
-        import os
-        import webbrowser
-        output_dir = self.output_dir
-        if output_dir and os.path.isdir(output_dir):
-            # En Windows, usa explorer.exe
-            if os.name == 'nt':
-                os.startfile(output_dir)
-            else:
-                webbrowser.open(f'file://{output_dir}')
-            return True
+        # Esta función ya no es necesaria
         return False
 
 
