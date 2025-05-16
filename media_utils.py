@@ -58,6 +58,17 @@ def gregorian_date_to_exif_format(gregorian_date_str):
 
 def extract_datetime_from_filename(filename):
     base = os.path.splitext(os.path.basename(filename))[0]
+
+    # Pattern for: name_YYYY_MM_DD__HH_MM_SS
+    match_double_underscore = re.search(
+        r'_(\d{4}_\d{2}_\d{2})__(\d{2}_\d{2}_\d{2})', base)
+    if match_double_underscore:
+        date_str = match_double_underscore.group(1)
+        time_str = match_double_underscore.group(2)
+        fecha = date_str.replace('_', ':')
+        hora = time_str.replace('_', ':')
+        return fecha, hora
+
     # Busca el patrón: cualquier cosa, guion bajo, 8 dígitos, guion bajo
     match_custom = re.search(r'_(\d{8})_', base)
     if match_custom:
@@ -251,10 +262,20 @@ def cambiar_metadata_video(video_path, datetime_exif, exiftool_path=None):
     flags = get_creationflags()
     if exiftool_path is None:
         exiftool_path = get_bin_path('exiftool.exe')
+    # Extraer la fecha y hora por separado
+    fecha = datetime_exif[:10]  # YYYY:MM:DD
+    hora = datetime_exif[11:]   # HH:MM:SS
     args = [
         exiftool_path,
-        f"-AllDates={datetime_exif}",
-        f"-FileModifyDate={datetime_exif}",
+        f"-CreateDate={datetime_exif}",
+        f"-ModifyDate={datetime_exif}",
+        f"-MediaCreateDate={datetime_exif}",
+        f"-MediaModifyDate={datetime_exif}",
+        f"-TrackCreateDate={datetime_exif}",
+        f"-TrackModifyDate={datetime_exif}",
+        f"-CreationDate={datetime_exif}",
+        f"-FileCreateDate={fecha} {hora}",
+        f"-FileModifyDate={fecha} {hora}",
         "-overwrite_original",
         "-P",
         "-api", "QuickTimeUTC=1",

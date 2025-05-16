@@ -288,4 +288,4 @@ if __name__ == '__main__':
     api = Api()
     webview.create_window('Editor Unificado de Metadatos', 'web/index.html',
                           js_api=api, width=950, height=670, resizable=True)
-    webview.start(debug=False)
+    webview.start(debug=True)
