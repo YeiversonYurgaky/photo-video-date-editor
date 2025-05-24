@@ -11,6 +11,12 @@ function initializeApp() {
   const dropZone = document.getElementById("drop-zone");
   const fileInput = document.getElementById("file-input");
 
+  // Verificar que los elementos existen
+  if (!dropZone || !fileInput) {
+    console.error("Elementos no encontrados:", { dropZone, fileInput });
+    return;
+  }
+
   // Event listeners para drag & drop
   dropZone.addEventListener("click", () => fileInput.click());
   dropZone.addEventListener("dragover", handleDragOver);
@@ -53,8 +59,8 @@ async function uploadFiles(files) {
   const dropZone = document.getElementById("drop-zone");
 
   // Mostrar loading
-  dropZone.style.display = "none";
-  loading.style.display = "block";
+  if (dropZone) dropZone.style.display = "none";
+  if (loading) loading.style.display = "block";
 
   const formData = new FormData();
   for (let file of files) {
@@ -80,11 +86,12 @@ async function uploadFiles(files) {
     showError("Error de conexión: " + error.message);
   } finally {
     // Ocultar loading
-    loading.style.display = "none";
-    dropZone.style.display = "block";
+    if (loading) loading.style.display = "none";
+    if (dropZone) dropZone.style.display = "block";
 
     // Reset file input
-    document.getElementById("file-input").value = "";
+    const fileInput = document.getElementById("file-input");
+    if (fileInput) fileInput.value = "";
   }
 }
 
@@ -106,12 +113,119 @@ function renderBatchTable() {
   if (isMobile) {
     renderMobileInterface();
     // Ocultar form panel en móvil cuando hay archivos
-    document.querySelector(".form-panel").classList.add("has-files");
+    const formPanel = document.querySelector(".form-panel");
+    if (formPanel) formPanel.classList.add("has-files");
     return;
   } else {
     // Mostrar form panel en desktop
-    document.querySelector(".form-panel").classList.remove("has-files");
+    const formPanel = document.querySelector(".form-panel");
+    if (formPanel) formPanel.classList.remove("has-files");
   }
+
+  // Renderizar tabla normal para desktop
+  renderDesktopTable();
+}
+
+function renderMobileInterface() {
+  const batchDiv = document.getElementById("archivos-table-div");
+
+  let html = `
+    <button class="mobile-back-btn" onclick="goBackToUpload()">
+      <i class="fa-solid fa-arrow-left"></i>
+      Subir más archivos
+    </button>
+    
+    <div class="mobile-files-container">`;
+
+  currentBatchData.forEach((item, idx) => {
+    const fileName = item.filename;
+
+    // Preview para móvil
+    let previewHtml = "";
+    if (item.thumb) {
+      previewHtml = `<img src="${item.thumb}" alt="Preview">`;
+    } else {
+      previewHtml = `
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--gray-500);">
+          <i class="fa-solid ${
+            item.file_type === "video" ? "fa-video" : "fa-image"
+          }" style="font-size: 24px;"></i>
+        </div>`;
+    }
+
+    // Tipo de archivo
+    let fileTypeText = item.file_type === "video" ? "Video" : "Imagen";
+
+    // Action input para móvil
+    let actionInput = "";
+    if (item.file_type === "video") {
+      actionInput = `
+        <div class="mobile-input-group mobile-action-full">
+          <label>Acción</label>
+          <select id="accion-${idx}">
+            <option value="modificar_video">Solo metadata</option>
+            <option value="extraer_frame">Extraer frame</option>
+          </select>
+        </div>`;
+    } else if (item.file_type === "image") {
+      actionInput = `
+        <div class="mobile-input-group mobile-action-full">
+          <label>Acción</label>
+          <input type="text" value="Modificar imagen" readonly style="background: var(--gray-100); color: var(--gray-600);">
+        </div>`;
+    } else {
+      actionInput = `
+        <div class="mobile-input-group mobile-action-full">
+          <label>Acción</label>
+          <input type="text" value="No soportado" readonly style="background: var(--gray-100); color: var(--gray-400);">
+        </div>`;
+    }
+
+    html += `
+      <div class="mobile-file-card">
+        <div class="mobile-file-header">
+          <div class="mobile-preview">${previewHtml}</div>
+          <div class="mobile-file-info">
+            <div class="mobile-file-name">${fileName}</div>
+            <div class="mobile-file-type">${fileTypeText}</div>
+          </div>
+        </div>
+        
+        <div class="mobile-inputs">
+          <div class="mobile-input-group">
+            <label>Fecha extraída</label>
+            <input type="text" id="fecha-extraida-${idx}" value="${item.fecha}" readonly>
+          </div>
+          <div class="mobile-input-group">
+            <label>Hora extraída</label>
+            <input type="text" id="hora-extraida-${idx}" value="${item.hora}" readonly>
+          </div>
+          <div class="mobile-input-group">
+            <label>Fecha nueva</label>
+            <input type="text" id="fecha-nueva-${idx}" value="${item.fecha}" class="editable">
+          </div>
+          <div class="mobile-input-group">
+            <label>Hora nueva</label>
+            <input type="text" id="hora-nueva-${idx}" value="${item.hora}" class="editable">
+          </div>
+          ${actionInput}
+        </div>
+      </div>`;
+  });
+
+  html += `
+    </div>
+    
+    <button class="mobile-process-btn" onclick="processBatch()">
+      <i class="fa-solid fa-play"></i>
+      Procesar ${currentBatchData.length} archivo(s)
+    </button>`;
+
+  batchDiv.innerHTML = html;
+}
+
+function renderDesktopTable() {
+  const batchDiv = document.getElementById("archivos-table-div");
 
   let html = `
         <div class="batch-table-container">
@@ -237,109 +351,11 @@ function renderBatchTable() {
   batchDiv.innerHTML = html;
 }
 
-function renderMobileInterface() {
-  const batchDiv = document.getElementById("archivos-table-div");
-
-  let html = `
-    <button class="mobile-back-btn" onclick="goBackToUpload()">
-      <i class="fa-solid fa-arrow-left"></i>
-      Subir más archivos
-    </button>
-    
-    <div class="mobile-files-container">`;
-
-  currentBatchData.forEach((item, idx) => {
-    const fileName = item.filename;
-    const ext = fileName.split(".").pop().toLowerCase();
-
-    // Preview para móvil
-    let previewHtml = "";
-    if (item.thumb) {
-      previewHtml = `<img src="${item.thumb}" alt="Preview">`;
-    } else {
-      previewHtml = `
-        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--gray-500);">
-          <i class="fa-solid ${
-            item.file_type === "video" ? "fa-video" : "fa-image"
-          }" style="font-size: 24px;"></i>
-        </div>`;
-    }
-
-    // Tipo de archivo
-    let fileTypeText = item.file_type === "video" ? "Video" : "Imagen";
-
-    // Action input para móvil
-    let actionInput = "";
-    if (item.file_type === "video") {
-      actionInput = `
-        <div class="mobile-input-group mobile-action-full">
-          <label>Acción</label>
-          <select id="accion-${idx}">
-            <option value="modificar_video">Solo metadata</option>
-            <option value="extraer_frame">Extraer frame</option>
-          </select>
-        </div>`;
-    } else if (item.file_type === "image") {
-      actionInput = `
-        <div class="mobile-input-group mobile-action-full">
-          <label>Acción</label>
-          <input type="text" value="Modificar imagen" readonly style="background: var(--gray-100); color: var(--gray-600);">
-        </div>`;
-    } else {
-      actionInput = `
-        <div class="mobile-input-group mobile-action-full">
-          <label>Acción</label>
-          <input type="text" value="No soportado" readonly style="background: var(--gray-100); color: var(--gray-400);">
-        </div>`;
-    }
-
-    html += `
-      <div class="mobile-file-card">
-        <div class="mobile-file-header">
-          <div class="mobile-preview">${previewHtml}</div>
-          <div class="mobile-file-info">
-            <div class="mobile-file-name">${fileName}</div>
-            <div class="mobile-file-type">${fileTypeText}</div>
-          </div>
-        </div>
-        
-        <div class="mobile-inputs">
-          <div class="mobile-input-group">
-            <label>Fecha extraída</label>
-            <input type="text" id="fecha-extraida-${idx}" value="${item.fecha}" readonly>
-          </div>
-          <div class="mobile-input-group">
-            <label>Hora extraída</label>
-            <input type="text" id="hora-extraida-${idx}" value="${item.hora}" readonly>
-          </div>
-          <div class="mobile-input-group">
-            <label>Fecha nueva</label>
-            <input type="text" id="fecha-nueva-${idx}" value="${item.fecha}" class="editable">
-          </div>
-          <div class="mobile-input-group">
-            <label>Hora nueva</label>
-            <input type="text" id="hora-nueva-${idx}" value="${item.hora}" class="editable">
-          </div>
-          ${actionInput}
-        </div>
-      </div>`;
-  });
-
-  html += `
-    </div>
-    
-    <button class="mobile-process-btn" onclick="processBatch()">
-      <i class="fa-solid fa-play"></i>
-      Procesar ${currentBatchData.length} archivo(s)
-    </button>`;
-
-  batchDiv.innerHTML = html;
-}
-
 function goBackToUpload() {
   // Limpiar datos y volver a la pantalla de carga
   clearBatch();
-  document.querySelector(".form-panel").classList.remove("has-files");
+  const formPanel = document.querySelector(".form-panel");
+  if (formPanel) formPanel.classList.remove("has-files");
 }
 
 function getFileIcon(extension) {
@@ -363,7 +379,7 @@ async function processBatch() {
     return;
   }
 
-  // Recopilar datos actualizados de la tabla
+  // Recopilar datos actualizados
   const filesToProcess = currentBatchData.map((item, idx) => {
     const fechaNueva = document.getElementById(`fecha-nueva-${idx}`).value;
     const horaNueva = document.getElementById(`hora-nueva-${idx}`).value;
@@ -505,3 +521,10 @@ function showError(message) {
             ${message}
         </div>`;
 }
+
+// Re-evaluar en resize de ventana
+window.addEventListener("resize", function () {
+  if (currentBatchData && currentBatchData.length > 0) {
+    renderBatchTable();
+  }
+});

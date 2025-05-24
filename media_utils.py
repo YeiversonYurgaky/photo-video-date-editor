@@ -1,6 +1,8 @@
 import os
 import sys
 import re
+import platform    
+import shutil
 from datetime import timedelta
 
 try:
@@ -133,13 +135,7 @@ def extract_datetime_from_filename(filename):
     return fecha, hora
 
 
-def get_bin_path(filename):
-    if getattr(sys, 'frozen', False):
-        base_path = sys._MEIPASS
-    else:
-        base_path = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(base_path, 'bin', filename)
-
+def get_bin_path(filename):    """    Obtiene la ruta del binario, adaptándose al sistema operativo.    Prioriza binarios del sistema en Linux/producción.    """    # En Linux (como Render), usar binarios del sistema directamente    if platform.system() != 'Windows':        clean_filename = filename.replace('.exe', '')        system_path = shutil.which(clean_filename)        if system_path:            return system_path        # Fallback a carpeta bin local (para Windows/desarrollo)    if getattr(sys, 'frozen', False):        base_path = sys._MEIPASS    else:        base_path = os.path.dirname(os.path.abspath(__file__))        return os.path.join(base_path, 'bin', filename)
 
 def get_creationflags():
     import sys
