@@ -162,7 +162,7 @@ function renderMobileInterface() {
       actionInput = `
         <div class="mobile-input-group mobile-action-full">
           <label>Acción</label>
-          <select id="accion-${idx}">
+          <select id="accion-${idx}" class="mobile-select">
             <option value="modificar_video">Solo metadata</option>
             <option value="extraer_frame">Extraer frame</option>
           </select>
@@ -181,6 +181,10 @@ function renderMobileInterface() {
         </div>`;
     }
 
+    // Construir fecha y hora extraídas en formato legible
+    const fechaExtraida = formatearFecha(item.fecha);
+    const horaExtraida = formatearHora(item.hora);
+
     html += `
       <div class="mobile-file-card">
         <div class="mobile-file-header">
@@ -194,19 +198,23 @@ function renderMobileInterface() {
         <div class="mobile-inputs">
           <div class="mobile-input-group">
             <label>Fecha extraída</label>
-            <input type="text" id="fecha-extraida-${idx}" value="${item.fecha}" readonly>
+            <input type="text" id="fecha-extraida-${idx}" value="${fechaExtraida}" readonly>
           </div>
           <div class="mobile-input-group">
             <label>Hora extraída</label>
-            <input type="text" id="hora-extraida-${idx}" value="${item.hora}" readonly>
+            <input type="text" id="hora-extraida-${idx}" value="${horaExtraida}" readonly>
           </div>
           <div class="mobile-input-group">
             <label>Fecha nueva</label>
-            <input type="text" id="fecha-nueva-${idx}" value="${item.fecha}" class="editable">
+            <input type="date" id="fecha-nueva-${idx}" class="editable mobile-date-input" 
+                   value="${convertirFechaAHTML(item.fecha)}" 
+                   data-original-format="${item.fecha}">
           </div>
           <div class="mobile-input-group">
             <label>Hora nueva</label>
-            <input type="text" id="hora-nueva-${idx}" value="${item.hora}" class="editable">
+            <input type="time" id="hora-nueva-${idx}" class="editable mobile-time-input" 
+                   value="${convertirHoraAHTML(item.hora)}" step="1"
+                   data-original-format="${item.hora}">
           </div>
           ${actionInput}
         </div>
@@ -222,6 +230,43 @@ function renderMobileInterface() {
     </button>`;
 
   batchDiv.innerHTML = html;
+}
+
+// Función para formatear fecha de YYYY:MM:DD a formato legible DD/MM/YYYY
+function formatearFecha(fechaStr) {
+  if (!fechaStr) return "";
+  
+  // Si la fecha ya está en formato YYYY:MM:DD
+  if (fechaStr.includes(':')) {
+    const partes = fechaStr.split(':');
+    if (partes.length === 3) {
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+  }
+  
+  return fechaStr;
+}
+
+// Función para formatear hora legible
+function formatearHora(horaStr) {
+  return horaStr || "";
+}
+
+// Función para convertir fecha YYYY:MM:DD a formato HTML YYYY-MM-DD
+function convertirFechaAHTML(fechaStr) {
+  if (!fechaStr) return "";
+  
+  // Si la fecha está en formato YYYY:MM:DD
+  if (fechaStr.includes(':')) {
+    return fechaStr.replace(/:/g, '-');
+  }
+  
+  return fechaStr;
+}
+
+// Función para convertir hora HH:MM:SS a formato HTML HH:MM:SS
+function convertirHoraAHTML(horaStr) {
+  return horaStr || "";
 }
 
 function renderDesktopTable() {
@@ -381,8 +426,26 @@ async function processBatch() {
 
   // Recopilar datos actualizados
   const filesToProcess = currentBatchData.map((item, idx) => {
-    const fechaNueva = document.getElementById(`fecha-nueva-${idx}`).value;
-    const horaNueva = document.getElementById(`hora-nueva-${idx}`).value;
+    let fechaNueva = document.getElementById(`fecha-nueva-${idx}`).value;
+    let horaNueva = document.getElementById(`hora-nueva-${idx}`).value;
+    
+    // Convertir formato de fecha de HTML (YYYY-MM-DD) a EXIF (YYYY:MM:DD)
+    if (fechaNueva && fechaNueva.includes('-')) {
+      fechaNueva = fechaNueva.replace(/-/g, ':');
+    }
+    
+    // Si es un input type="date", obtener el valor original si está disponible
+    const fechaInput = document.getElementById(`fecha-nueva-${idx}`);
+    if (fechaInput && fechaInput.getAttribute('data-original-format') && !fechaNueva) {
+      fechaNueva = fechaInput.getAttribute('data-original-format');
+    }
+    
+    // Si es un input type="time", obtener el valor original si está disponible
+    const horaInput = document.getElementById(`hora-nueva-${idx}`);
+    if (horaInput && horaInput.getAttribute('data-original-format') && !horaNueva) {
+      horaNueva = horaInput.getAttribute('data-original-format');
+    }
+    
     const accionSelect = document.getElementById(`accion-${idx}`);
     const accion = accionSelect ? accionSelect.value : "modificar";
 

@@ -155,11 +155,19 @@ def index():
 def upload_files():
     """Maneja la subida de archivos múltiples"""
     if 'files' not in request.files:
+        print("[ERROR] No se encontraron archivos en la solicitud")
+        print("Headers:", dict(request.headers))
+        print("Form data:", dict(request.form))
         return jsonify({'error': 'No files provided'}), 400
     
     files = request.files.getlist('files')
     if not files or all(file.filename == '' for file in files):
+        print("[ERROR] No hay archivos seleccionados o nombres vacíos")
         return jsonify({'error': 'No files selected'}), 400
+    
+    # Depurar información de archivos
+    for file in files:
+        print(f"[DEBUG] Archivo recibido: {file.filename}, Content-Type: {file.content_type}")
     
     batch_metadata = []
     session_id = str(uuid.uuid4())
@@ -170,6 +178,7 @@ def upload_files():
         if file:  # Removemos la verificación allowed_file para permitir cualquier extensión
             # Obtener el nombre original del archivo
             original_filename = file.filename
+            print(f"[DEBUG] Nombre original: {original_filename}")
             
             # En dispositivos móviles, a veces el nombre es una ruta completa
             # o tiene caracteres extraños, así que extraemos el nombre base
@@ -178,45 +187,64 @@ def upload_files():
             if '\\' in original_filename:
                 original_filename = original_filename.split('\\')[-1]
             
+            # Para iOS/Safari que puede enviar archivos como "image.jpg"
+            if original_filename.startswith('image.') or original_filename.startswith('video.'):
+                # Generar un nombre con timestamp
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                ext = original_filename.split('.')[-1]
+                original_filename = f"mobile_{timestamp}.{ext}"
+            
+            print(f"[DEBUG] Nombre procesado: {original_filename}")
+            
             # Limpiamos el nombre para que sea seguro para el sistema de archivos
             filename = secure_filename(original_filename)
+            print(f"[DEBUG] Nombre seguro: {filename}")
             
             # Si después de limpiar quedó vacío o muy corto, usamos un nombre genérico
             if len(filename) < 3:
                 current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
                 file_ext = original_filename.split('.')[-1] if '.' in original_filename else 'jpg'
                 filename = f"mobile_upload_{current_time}.{file_ext}"
+                print(f"[DEBUG] Nombre genérico: {filename}")
             
             file_path = os.path.join(session_folder, filename)
             file.save(file_path)
+            print(f"[DEBUG] Archivo guardado en: {file_path}")
             
-            # Determinar el tipo de archivo
-            file_type = get_file_type(filename)
+            # Determinar el tipo de archivo por MIME
+            mime_type = file.content_type or ""
+            file_type = 'unknown'
             
-            # Si no pudimos determinar el tipo por extensión, intentamos por contenido
-            if file_type == 'unknown':
-                file_type = detect_file_type_from_content(file_path)
+            if 'image/' in mime_type:
+                file_type = 'image'
+            elif 'video/' in mime_type:
+                file_type = 'video'
+            else:
+                # Si no tenemos MIME, intentamos por extensión
+                file_type = get_file_type(filename)
                 
-                # Si determinamos un nuevo tipo, actualizamos la extensión
-                if file_type != 'unknown' and '.' in filename:
-                    name_base = os.path.splitext(filename)[0]
-                    new_ext = 'jpg' if file_type == 'image' else 'mp4'
-                    new_filename = f"{name_base}.{new_ext}"
-                    new_file_path = os.path.join(session_folder, new_filename)
-                    
-                    # Renombramos el archivo
-                    os.rename(file_path, new_file_path)
-                    filename = new_filename
-                    file_path = new_file_path
+                # Si sigue siendo desconocido, intentamos por contenido
+                if file_type == 'unknown':
+                    file_type = detect_file_type_from_content(file_path)
+            
+            print(f"[DEBUG] Tipo detectado: {file_type} (MIME: {mime_type})")
             
             # Extraer metadatos del nombre
             try:
                 fecha, hora = extract_datetime_from_filename(filename)
-            except Exception:
+                print(f"[DEBUG] Metadatos extraídos: fecha={fecha}, hora={hora}")
+            except Exception as e:
+                print(f"[ERROR] Error extrayendo metadatos: {e}")
                 fecha, hora = "", ""
             
             # Generar miniatura
-            thumbnail = generate_thumbnail(file_path, file_type)
+            try:
+                thumbnail = generate_thumbnail(file_path, file_type)
+            except Exception as e:
+                print(f"[ERROR] Error generando thumbnail: {e}")
+                # SVG fallback
+                svg = '''<svg xmlns='http://www.w3.org/2000/svg' width='60' height='40'><rect width='100%' height='100%' fill='#eee'/><text x='50%' y='50%' font-size='10' text-anchor='middle' fill='#888' dy='.3em'>Sin miniatura</text></svg>'''
+                thumbnail = f"data:image/svg+xml;base64,{base64.b64encode(svg.encode('utf-8')).decode('utf-8')}"
             
             batch_metadata.append({
                 'path': file_path,
