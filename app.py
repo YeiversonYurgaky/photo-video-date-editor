@@ -45,41 +45,103 @@ def allowed_file(filename, file_type=None):
         return ext in all_exts
 
 def get_file_type(filename):
+    """Determina el tipo de archivo por su extensión o contenido"""
     if '.' not in filename:
         return 'unknown'
+    
     ext = filename.rsplit('.', 1)[1].lower()
+    
+    # Primero intentamos por extensión
     if ext in ALLOWED_EXTENSIONS['image']:
         return 'image'
     elif ext in ALLOWED_EXTENSIONS['video']:
         return 'video'
+    
     return 'unknown'
 
-def generate_thumbnail(file_path, file_type):
-    """Genera thumbnail en memoria, similar a tu función original"""
+def detect_file_type_from_content(file_path):
+    """Detecta el tipo de archivo examinando sus primeros bytes"""
     try:
-        if file_type == 'video':
-            # Extrae frame usando ffmpeg
-            out, _ = (
-                ffmpeg.input(file_path, ss=0)
-                .output('pipe:', vframes=1, format='image2', vcodec='mjpeg')
-                .run(capture_stdout=True, capture_stderr=True)
-            )
-            img = Image.open(io.BytesIO(out))
-            img.thumbnail((120, 80))
-            buffer = io.BytesIO()
-            img.save(buffer, format="JPEG")
-            return f"data:image/jpeg;base64,{base64.b64encode(buffer.getvalue()).decode('utf-8')}"
+        with open(file_path, 'rb') as f:
+            header = f.read(12)  # Leemos los primeros bytes
             
-        elif file_type == 'image':
-            with open(file_path, 'rb') as f:
-                img_bytes = f.read()
-            img = Image.open(io.BytesIO(img_bytes))
-            img.thumbnail((120, 80))
-            buffer = io.BytesIO()
-            img.save(buffer, format="JPEG")
-            return f"data:image/jpeg;base64,{base64.b64encode(buffer.getvalue()).decode('utf-8')}"
+        # Firmas de archivo comunes
+        # JPEG: FF D8 FF
+        if header[:3] == b'\xFF\xD8\xFF':
+            return 'image'
+        
+        # PNG: 89 50 4E 47 0D 0A 1A 0A
+        if header[:8] == b'\x89\x50\x4E\x47\x0D\x0A\x1A\x0A':
+            return 'image'
+        
+        # GIF: 47 49 46 38
+        if header[:4] == b'GIF8':
+            return 'image'
+        
+        # MP4: 00 00 00 xx 66 74 79 70 (ftyp)
+        if header[4:8] == b'ftyp':
+            return 'video'
+        
+        # MOV/QuickTime: 00 00 00 xx 6D 6F 6F 76 (moov)
+        if header[4:8] == b'moov' or header[4:8] == b'mdat':
+            return 'video'
+        
+        # Si no podemos determinar, usamos el tamaño como heurística
+        # Los videos suelen ser mucho más grandes que las imágenes
+        file_size = os.path.getsize(file_path)
+        if file_size > 5 * 1024 * 1024:  # 5MB
+            return 'video'
+        else:
+            return 'image'
             
     except Exception as e:
+        print(f"Error detectando tipo por contenido: {e}")
+        return 'unknown'
+
+def generate_thumbnail(file_path, file_type):
+    """Genera thumbnail en memoria, con mejor manejo de errores"""
+    try:
+        if file_type == 'video':
+            try:
+                # Extrae frame usando ffmpeg
+                out, _ = (
+                    ffmpeg.input(file_path, ss=0)
+                    .output('pipe:', vframes=1, format='image2', vcodec='mjpeg')
+                    .run(capture_stdout=True, capture_stderr=True)
+                )
+                img = Image.open(io.BytesIO(out))
+                img.thumbnail((120, 80))
+                buffer = io.BytesIO()
+                img.save(buffer, format="JPEG")
+                return f"data:image/jpeg;base64,{base64.b64encode(buffer.getvalue()).decode('utf-8')}"
+            except Exception as e:
+                print(f"Error generando thumbnail de video {file_path}: {e}")
+                # Fallback a icono genérico de video
+                svg = '''<svg xmlns='http://www.w3.org/2000/svg' width='60' height='40' viewBox='0 0 60 40'><rect width='100%' height='100%' fill='#333'/><polygon points='20,10 45,20 20,30' fill='#eee'/></svg>'''
+                return f"data:image/svg+xml;base64,{base64.b64encode(svg.encode('utf-8')).decode('utf-8')}"
+                
+        elif file_type == 'image':
+            try:
+                with open(file_path, 'rb') as f:
+                    img_bytes = f.read()
+                img = Image.open(io.BytesIO(img_bytes))
+                img.thumbnail((120, 80))
+                buffer = io.BytesIO()
+                img.save(buffer, format="JPEG")
+                return f"data:image/jpeg;base64,{base64.b64encode(buffer.getvalue()).decode('utf-8')}"
+            except Exception as e:
+                print(f"Error generando thumbnail de imagen {file_path}: {e}")
+                # Fallback a icono genérico de imagen
+                svg = '''<svg xmlns='http://www.w3.org/2000/svg' width='60' height='40' viewBox='0 0 60 40'><rect width='100%' height='100%' fill='#eee'/><circle cx='20' cy='15' r='5' fill='#999'/><polygon points='10,40 30,25 50,40' fill='#999'/></svg>'''
+                return f"data:image/svg+xml;base64,{base64.b64encode(svg.encode('utf-8')).decode('utf-8')}"
+                
+        else:
+            # Icono genérico para archivos desconocidos
+            svg = '''<svg xmlns='http://www.w3.org/2000/svg' width='60' height='40'><rect width='100%' height='100%' fill='#eee'/><text x='50%' y='50%' font-size='10' text-anchor='middle' fill='#888' dy='.3em'>Archivo</text></svg>'''
+            return f"data:image/svg+xml;base64,{base64.b64encode(svg.encode('utf-8')).decode('utf-8')}"
+            
+    except Exception as e:
+        print(f"Error general generando thumbnail: {e}")
         # SVG fallback
         svg = '''<svg xmlns='http://www.w3.org/2000/svg' width='60' height='40'><rect width='100%' height='100%' fill='#eee'/><text x='50%' y='50%' font-size='10' text-anchor='middle' fill='#888' dy='.3em'>Sin miniatura</text></svg>'''
         return f"data:image/svg+xml;base64,{base64.b64encode(svg.encode('utf-8')).decode('utf-8')}"
@@ -105,18 +167,55 @@ def upload_files():
     os.makedirs(session_folder, exist_ok=True)
     
     for file in files:
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
+        if file:  # Removemos la verificación allowed_file para permitir cualquier extensión
+            # Obtener el nombre original del archivo
+            original_filename = file.filename
+            
+            # En dispositivos móviles, a veces el nombre es una ruta completa
+            # o tiene caracteres extraños, así que extraemos el nombre base
+            if '/' in original_filename:
+                original_filename = original_filename.split('/')[-1]
+            if '\\' in original_filename:
+                original_filename = original_filename.split('\\')[-1]
+            
+            # Limpiamos el nombre para que sea seguro para el sistema de archivos
+            filename = secure_filename(original_filename)
+            
+            # Si después de limpiar quedó vacío o muy corto, usamos un nombre genérico
+            if len(filename) < 3:
+                current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
+                file_ext = original_filename.split('.')[-1] if '.' in original_filename else 'jpg'
+                filename = f"mobile_upload_{current_time}.{file_ext}"
+            
             file_path = os.path.join(session_folder, filename)
             file.save(file_path)
             
-            # Extraer metadatos como en tu app original
+            # Determinar el tipo de archivo
+            file_type = get_file_type(filename)
+            
+            # Si no pudimos determinar el tipo por extensión, intentamos por contenido
+            if file_type == 'unknown':
+                file_type = detect_file_type_from_content(file_path)
+                
+                # Si determinamos un nuevo tipo, actualizamos la extensión
+                if file_type != 'unknown' and '.' in filename:
+                    name_base = os.path.splitext(filename)[0]
+                    new_ext = 'jpg' if file_type == 'image' else 'mp4'
+                    new_filename = f"{name_base}.{new_ext}"
+                    new_file_path = os.path.join(session_folder, new_filename)
+                    
+                    # Renombramos el archivo
+                    os.rename(file_path, new_file_path)
+                    filename = new_filename
+                    file_path = new_file_path
+            
+            # Extraer metadatos del nombre
             try:
                 fecha, hora = extract_datetime_from_filename(filename)
             except Exception:
                 fecha, hora = "", ""
             
-            file_type = get_file_type(filename)
+            # Generar miniatura
             thumbnail = generate_thumbnail(file_path, file_type)
             
             batch_metadata.append({
