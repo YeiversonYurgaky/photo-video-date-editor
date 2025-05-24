@@ -228,34 +228,50 @@ def download_processed_files(session_id):
     processed_folder = os.path.join(app.config['PROCESSED_FOLDER'], session_id)
     
     if not os.path.exists(processed_folder):
-        return jsonify({'error': 'Session not found'}), 404
+        return f"Error: Ningún archivo encontrado para session {session_id}", 404
     
-    # Crear ZIP en memoria
-    zip_buffer = io.BytesIO()
+    # Verificar que hay archivos en la carpeta
+    files_list = []
+    for root, dirs, files in os.walk(processed_folder):
+        for file in files:
+            file_path = os.path.join(root, file)
+            files_list.append(file_path)
     
-    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        for root, dirs, files in os.walk(processed_folder):
-            for file in files:
-                file_path = os.path.join(root, file)
-                zip_file.write(file_path, file)
+    if not files_list:
+        return f"Error: Carpeta vacía para session {session_id}", 404
+        
+    # Crear ZIP físico en lugar de en memoria para evitar problemas
+    zip_filename = f'processed_files_{session_id[:8]}.zip'
+    zip_path = os.path.join(app.config['PROCESSED_FOLDER'], zip_filename)
     
-    zip_buffer.seek(0)
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for file_path in files_list:
+            arcname = os.path.basename(file_path)
+            zip_file.write(file_path, arcname)
     
-    # Limpiar archivos temporales después de crear el ZIP
+    # Limpieza de archivos (los limpiamos después de crear el ZIP)
     try:
-        shutil.rmtree(processed_folder)
+        if os.path.exists(processed_folder) and processed_folder != zip_path:
+            for item in os.listdir(processed_folder):
+                item_path = os.path.join(processed_folder, item)
+                if item_path != zip_path and os.path.isfile(item_path):
+                    os.remove(item_path)
+        
         upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
         if os.path.exists(upload_folder):
             shutil.rmtree(upload_folder)
-    except:
-        pass  # No es crítico si no se puede limpiar
+    except Exception as e:
+        print(f"Error al limpiar archivos: {e}")
     
-    return send_file(
-        io.BytesIO(zip_buffer.getvalue()),
-        mimetype='application/zip',
-        as_attachment=True,
-        download_name=f'processed_files_{session_id[:8]}.zip'
-    )
+    try:
+        return send_file(
+            zip_path,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=zip_filename
+        )
+    except Exception as e:
+        return f"Error al enviar archivo: {str(e)}", 500
 
 @app.route('/api/extract_metadata', methods=['POST'])
 def extract_metadata():
@@ -275,6 +291,23 @@ def extract_metadata():
             'success': False,
             'error': str(e)
         })
+
+@app.route('/<path:path>')
+def catch_all(path):
+    """Maneja rutas que no existen, verificando si es un UUID para descargar"""
+    # Verificar si parece un UUID
+    if len(path) == 36 and path.count('-') == 4:
+        return redirect(url_for('download_processed_files', session_id=path))
+    
+    # Verificar si es un archivo .txt o .json que contiene un UUID
+    if path.endswith('.txt') or path.endswith('.json'):
+        base_name = os.path.basename(path)
+        name_without_ext = os.path.splitext(base_name)[0]
+        if len(name_without_ext) == 36 and name_without_ext.count('-') == 4:
+            return redirect(url_for('download_processed_files', session_id=name_without_ext))
+    
+    # Si no es un UUID, mostrar página principal
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000) 
