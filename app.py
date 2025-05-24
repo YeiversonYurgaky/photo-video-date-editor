@@ -187,13 +187,35 @@ def upload_files():
             if '\\' in original_filename:
                 original_filename = original_filename.split('\\')[-1]
             
-            # Para iOS/Safari que puede enviar archivos como "image.jpg"
-            if original_filename.startswith('image.') or original_filename.startswith('video.'):
-                # Generar un nombre con timestamp
+            # Tratar nombre de archivo desde dispositivos móviles
+            is_mobile_upload = False
+            mobile_markers = ['image.', 'video.', 'IMG_', 'VID_', 'Camera', 'File:', 'Video:', 'Photo:']
+
+            # Detectar si es una carga desde móvil
+            for marker in mobile_markers:
+                if marker in original_filename:
+                    is_mobile_upload = True
+                    break
+
+            # También verificar el header User-Agent para detección de dispositivos móviles
+            user_agent = request.headers.get('User-Agent', '').lower()
+            if 'mobile' in user_agent or 'android' in user_agent or 'iphone' in user_agent or 'ipad' in user_agent:
+                is_mobile_upload = True
+
+            if is_mobile_upload or original_filename.startswith('image.') or original_filename.startswith('video.'):
+                # Generar un nombre con timestamp más descriptivo para móviles
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                ext = original_filename.split('.')[-1]
-                original_filename = f"mobile_{timestamp}.{ext}"
-            
+                ext = original_filename.split('.')[-1].lower()
+                device_type = 'unknown'
+                
+                if 'iphone' in user_agent or 'ios' in user_agent:
+                    device_type = 'ios'
+                elif 'android' in user_agent:
+                    device_type = 'android'
+                
+                original_filename = f"mobile_{device_type}_{timestamp}.{ext}"
+                print(f"[DEBUG] Nombre para móvil generado: {original_filename}")
+
             print(f"[DEBUG] Nombre procesado: {original_filename}")
             
             # Limpiamos el nombre para que sea seguro para el sistema de archivos

@@ -60,6 +60,22 @@ def gregorian_date_to_exif_format(gregorian_date_str):
 
 def extract_datetime_from_filename(filename):
     base = os.path.splitext(os.path.basename(filename))[0]
+    
+    # Primero verificamos si es un archivo generado por nuestra aplicación desde un móvil
+    # Formato: mobile_[device]_YYYYMMDD_HHMMSS.ext
+    mobile_match = re.search(r'mobile_[a-z]+_(\d{8})_(\d{6})', base)
+    if mobile_match:
+        date_str = mobile_match.group(1)
+        time_str = mobile_match.group(2)
+        year = date_str[:4]
+        month = date_str[4:6]
+        day = date_str[6:8]
+        hour = time_str[:2]
+        minute = time_str[2:4]
+        second = time_str[4:6]
+        fecha = f"{year}:{month}:{day}"
+        hora = f"{hour}:{minute}:{second}"
+        return fecha, hora
 
     # Pattern for: name_YYYY_MM_DD__HH_MM_SS
     match_double_underscore = re.search(

@@ -139,6 +139,9 @@ function renderMobileInterface() {
 
   currentBatchData.forEach((item, idx) => {
     const fileName = item.filename;
+    // Formatear nombre de archivo para mejor visualización
+    const displayName = formatDisplayFileName(fileName);
+
     // Determinamos si debemos colapsar las tarjetas por defecto cuando hay muchos archivos
     const shouldCollapseDefault = currentBatchData.length > 3;
     const collapsedClass = shouldCollapseDefault ? "collapsed" : "";
@@ -181,7 +184,7 @@ function renderMobileInterface() {
         <div class="mobile-file-header">
           <div class="mobile-preview">${previewHtml}</div>
           <div class="mobile-file-info">
-            <div class="mobile-file-name">${fileName}</div>
+            <div class="mobile-file-name" title="${fileName}">${displayName}</div>
             <div class="mobile-file-type">${fileTypeText}</div>
           </div>
         </div>
@@ -664,4 +667,34 @@ function toggleFileCard(index) {
   if (!card.classList.contains("collapsed")) {
     card.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+}
+
+// Función para formatear nombres de archivo para visualización
+function formatDisplayFileName(fileName) {
+  // Si es un nombre generado por la app para móviles, extraer información relevante
+  const mobileMatcher = /mobile_([a-z]+)_(\d{8})_(\d{6})\.([a-z]+)/i;
+  const match = fileName.match(mobileMatcher);
+
+  if (match) {
+    const device = match[1];
+    const date = match[2];
+    const time = match[3];
+    const ext = match[4];
+
+    // Formato: "Captura [dispositivo] - DD/MM/YYYY"
+    const day = date.substring(6, 8);
+    const month = date.substring(4, 6);
+    const year = date.substring(0, 4);
+
+    return `Captura ${device} - ${day}/${month}/${year}`;
+  }
+
+  // Para nombres muy largos, truncar y añadir elipsis
+  if (fileName.length > 25) {
+    const extension = fileName.split(".").pop();
+    const name = fileName.substring(0, fileName.lastIndexOf("."));
+    return name.substring(0, 22) + "..." + "." + extension;
+  }
+
+  return fileName;
 }
