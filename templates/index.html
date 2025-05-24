@@ -2,8 +2,11 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Editor Unificado de Metadatos</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editor de Metadatos</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <link
       rel="icon"
       href="{{ url_for('static', filename='favicon.ico') }}"
@@ -20,98 +23,20 @@
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#4f46e5" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="Editor Metadatos" />
     <link
       rel="manifest"
       href="{{ url_for('static', filename='manifest.json') }}"
     />
-
-    <style>
-      .main-flex {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-      }
-      .form-panel,
-      .output-panel {
-        flex: 1;
-        margin: 10px;
-      }
-      .output-panel {
-        padding: 20px;
-        background-color: #f7f7f7;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      }
-
-      /* Estilos para drag & drop */
-      .drop-zone {
-        border: 2px dashed var(--gray-300);
-        border-radius: var(--border-radius-lg);
-        padding: 40px 20px;
-        text-align: center;
-        transition: all var(--transition-normal);
-        background: var(--gray-50);
-        cursor: pointer;
-      }
-
-      .drop-zone.dragover {
-        border-color: var(--primary-color);
-        background: var(--primary-light);
-        transform: scale(1.02);
-      }
-
-      .drop-zone i {
-        font-size: 48px;
-        color: var(--gray-400);
-        margin-bottom: 16px;
-        display: block;
-      }
-
-      .drop-zone.dragover i {
-        color: var(--primary-color);
-      }
-
-      .file-input {
-        display: none;
-      }
-
-      /* Loading spinner */
-      .loading {
-        display: none;
-        text-align: center;
-        padding: 20px;
-      }
-
-      .spinner {
-        border: 4px solid var(--gray-200);
-        border-top: 4px solid var(--primary-color);
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 16px;
-      }
-
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-    </style>
   </head>
   <body>
     <div class="main-flex">
       <div class="container form-panel">
-        <h1>
-          <i class="fa-solid fa-pen-ruler" style="margin-right: 10px"></i>Editor
-          de Metadatos
-        </h1>
+        <h1><i class="fa-solid fa-pen-ruler"></i>Editor de Metadatos</h1>
         <div class="section" id="file-section">
           <div class="input-group">
             <!-- Drop zone para archivos -->
@@ -139,9 +64,7 @@
       </div>
 
       <div class="container output-panel">
-        <h1 style="font-size: 1.3rem; margin-bottom: 18px">
-          <i class="fa-solid fa-table"></i> Archivos para procesar
-        </h1>
+        <h1><i class="fa-solid fa-table"></i> Archivos para procesar</h1>
         <div class="section" id="output-section">
           <div id="archivos-table-div">
             <div class="empty-state">

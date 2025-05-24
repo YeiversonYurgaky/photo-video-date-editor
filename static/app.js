@@ -153,31 +153,34 @@ function renderMobileInterface() {
         </div>`;
     }
 
-    // Tipo de archivo
-    let fileTypeText = item.file_type === "video" ? "Video" : "Imagen";
+    // Tipo de archivo con icono
+    let fileTypeText =
+      item.file_type === "video"
+        ? `<i class="fa-solid fa-video"></i> Video`
+        : `<i class="fa-solid fa-image"></i> Imagen`;
 
     // Action input para móvil
     let actionInput = "";
     if (item.file_type === "video") {
       actionInput = `
-        <div class="mobile-input-group mobile-action-full">
-          <label>Acción</label>
+        <div class="mobile-input-group mobile-input-full">
+          <label><i class="fa-solid fa-gear"></i> Acción a realizar</label>
           <select id="accion-${idx}" class="mobile-select">
-            <option value="modificar_video">Solo metadata</option>
-            <option value="extraer_frame">Extraer frame</option>
+            <option value="modificar_video">Solo cambiar metadata</option>
+            <option value="extraer_frame">Extraer imagen del video</option>
           </select>
         </div>`;
     } else if (item.file_type === "image") {
       actionInput = `
-        <div class="mobile-input-group mobile-action-full">
-          <label>Acción</label>
-          <input type="text" value="Modificar imagen" readonly style="background: var(--gray-100); color: var(--gray-600);">
+        <div class="mobile-input-group mobile-input-full">
+          <label><i class="fa-solid fa-gear"></i> Acción a realizar</label>
+          <input type="text" value="Modificar metadatos" readonly>
         </div>`;
     } else {
       actionInput = `
-        <div class="mobile-input-group mobile-action-full">
-          <label>Acción</label>
-          <input type="text" value="No soportado" readonly style="background: var(--gray-100); color: var(--gray-400);">
+        <div class="mobile-input-group mobile-input-full">
+          <label><i class="fa-solid fa-gear"></i> Acción a realizar</label>
+          <input type="text" value="No soportado" readonly>
         </div>`;
     }
 
@@ -196,26 +199,32 @@ function renderMobileInterface() {
         </div>
         
         <div class="mobile-inputs">
-          <div class="mobile-input-group">
-            <label>Fecha extraída</label>
-            <input type="text" id="fecha-extraida-${idx}" value="${fechaExtraida}" readonly>
+          <div class="mobile-input-row">
+            <div class="mobile-input-group">
+              <label><i class="fa-solid fa-calendar-check"></i> Fecha extraída</label>
+              <input type="text" id="fecha-extraida-${idx}" value="${fechaExtraida}" readonly>
+            </div>
+            <div class="mobile-input-group">
+              <label><i class="fa-solid fa-clock"></i> Hora extraída</label>
+              <input type="text" id="hora-extraida-${idx}" value="${horaExtraida}" readonly>
+            </div>
           </div>
-          <div class="mobile-input-group">
-            <label>Hora extraída</label>
-            <input type="text" id="hora-extraida-${idx}" value="${horaExtraida}" readonly>
+          
+          <div class="mobile-input-row">
+            <div class="mobile-input-group">
+              <label><i class="fa-solid fa-calendar-plus"></i> Fecha nueva</label>
+              <input type="date" id="fecha-nueva-${idx}" class="editable mobile-date-input" 
+                     value="${convertirFechaAHTML(item.fecha)}" 
+                     data-original-format="${item.fecha}">
+            </div>
+            <div class="mobile-input-group">
+              <label><i class="fa-solid fa-clock"></i> Hora nueva</label>
+              <input type="time" id="hora-nueva-${idx}" class="editable mobile-time-input" 
+                     value="${convertirHoraAHTML(item.hora)}" step="1"
+                     data-original-format="${item.hora}">
+            </div>
           </div>
-          <div class="mobile-input-group">
-            <label>Fecha nueva</label>
-            <input type="date" id="fecha-nueva-${idx}" class="editable mobile-date-input" 
-                   value="${convertirFechaAHTML(item.fecha)}" 
-                   data-original-format="${item.fecha}">
-          </div>
-          <div class="mobile-input-group">
-            <label>Hora nueva</label>
-            <input type="time" id="hora-nueva-${idx}" class="editable mobile-time-input" 
-                   value="${convertirHoraAHTML(item.hora)}" step="1"
-                   data-original-format="${item.hora}">
-          </div>
+          
           ${actionInput}
         </div>
       </div>`;
@@ -225,8 +234,10 @@ function renderMobileInterface() {
     </div>
     
     <button class="mobile-process-btn" onclick="processBatch()">
-      <i class="fa-solid fa-play"></i>
-      Procesar ${currentBatchData.length} archivo(s)
+      <i class="fa-solid fa-check"></i>
+      Procesar ${currentBatchData.length} archivo${
+    currentBatchData.length !== 1 ? "s" : ""
+  }
     </button>`;
 
   batchDiv.innerHTML = html;
@@ -235,15 +246,15 @@ function renderMobileInterface() {
 // Función para formatear fecha de YYYY:MM:DD a formato legible DD/MM/YYYY
 function formatearFecha(fechaStr) {
   if (!fechaStr) return "";
-  
+
   // Si la fecha ya está en formato YYYY:MM:DD
-  if (fechaStr.includes(':')) {
-    const partes = fechaStr.split(':');
+  if (fechaStr.includes(":")) {
+    const partes = fechaStr.split(":");
     if (partes.length === 3) {
       return `${partes[2]}/${partes[1]}/${partes[0]}`;
     }
   }
-  
+
   return fechaStr;
 }
 
@@ -255,12 +266,12 @@ function formatearHora(horaStr) {
 // Función para convertir fecha YYYY:MM:DD a formato HTML YYYY-MM-DD
 function convertirFechaAHTML(fechaStr) {
   if (!fechaStr) return "";
-  
+
   // Si la fecha está en formato YYYY:MM:DD
-  if (fechaStr.includes(':')) {
-    return fechaStr.replace(/:/g, '-');
+  if (fechaStr.includes(":")) {
+    return fechaStr.replace(/:/g, "-");
   }
-  
+
   return fechaStr;
 }
 
@@ -428,24 +439,32 @@ async function processBatch() {
   const filesToProcess = currentBatchData.map((item, idx) => {
     let fechaNueva = document.getElementById(`fecha-nueva-${idx}`).value;
     let horaNueva = document.getElementById(`hora-nueva-${idx}`).value;
-    
+
     // Convertir formato de fecha de HTML (YYYY-MM-DD) a EXIF (YYYY:MM:DD)
-    if (fechaNueva && fechaNueva.includes('-')) {
-      fechaNueva = fechaNueva.replace(/-/g, ':');
+    if (fechaNueva && fechaNueva.includes("-")) {
+      fechaNueva = fechaNueva.replace(/-/g, ":");
     }
-    
+
     // Si es un input type="date", obtener el valor original si está disponible
     const fechaInput = document.getElementById(`fecha-nueva-${idx}`);
-    if (fechaInput && fechaInput.getAttribute('data-original-format') && !fechaNueva) {
-      fechaNueva = fechaInput.getAttribute('data-original-format');
+    if (
+      fechaInput &&
+      fechaInput.getAttribute("data-original-format") &&
+      !fechaNueva
+    ) {
+      fechaNueva = fechaInput.getAttribute("data-original-format");
     }
-    
+
     // Si es un input type="time", obtener el valor original si está disponible
     const horaInput = document.getElementById(`hora-nueva-${idx}`);
-    if (horaInput && horaInput.getAttribute('data-original-format') && !horaNueva) {
-      horaNueva = horaInput.getAttribute('data-original-format');
+    if (
+      horaInput &&
+      horaInput.getAttribute("data-original-format") &&
+      !horaNueva
+    ) {
+      horaNueva = horaInput.getAttribute("data-original-format");
     }
-    
+
     const accionSelect = document.getElementById(`accion-${idx}`);
     const accion = accionSelect ? accionSelect.value : "modificar";
 
@@ -511,21 +530,26 @@ function showBatchResults(results, downloadUrl) {
   const successCount = results.filter((r) => r.success).length;
   const errorCount = results.filter((r) => !r.success).length;
 
+  // Detectar si es móvil
+  const isMobile = window.innerWidth <= 768;
+
   let html = `
         <div class="batch-results">
             <div class="results-header">
                 <h3><i class="fa-solid fa-check-circle"></i> Procesamiento Completado</h3>
-                <div class="results-count">${results.length} archivos</div>
+                <div class="results-count">${results.length} archivo${
+    results.length !== 1 ? "s" : ""
+  }</div>
             </div>
             <div class="results-list">`;
 
   results.forEach((result) => {
+    const iconClass = result.success ? "fa-check" : "fa-times";
+
     html += `
             <div class="result-item ${result.success ? "success" : "error"}">
                 <div class="result-icon">
-                    <i class="fa-solid ${
-                      result.success ? "fa-check" : "fa-times"
-                    }"></i>
+                    <i class="fa-solid ${iconClass}"></i>
                 </div>
                 <div class="result-content">
                     <div class="result-filename">${result.filename}</div>
@@ -538,18 +562,29 @@ function showBatchResults(results, downloadUrl) {
             </div>
             <div class="results-summary">
                 <div class="summary-stat success">
-                    <strong>${successCount}</strong><br>Exitosos
+                    <strong>${successCount}</strong>Exitosos
                 </div>
                 <div class="summary-stat error">
-                    <strong>${errorCount}</strong><br>Con errores
+                    <strong>${errorCount}</strong>Con errores
                 </div>
             </div>
-            <div class="results-actions">
+            <div class="results-actions">`;
+
+  // En móvil, primero mostrar descargar si hay archivos exitosos
+  if (isMobile && successCount > 0) {
+    html += `
+                <a href="${downloadUrl}" class="primary-btn" download>
+                    <i class="fa-solid fa-download"></i> Descargar archivos procesados
+                </a>`;
+  }
+
+  html += `
                 <button class="primary-btn" onclick="clearBatch()">
                     <i class="fa-solid fa-plus"></i> Procesar más archivos
                 </button>`;
 
-  if (successCount > 0) {
+  // En desktop, mostrar descargar después si hay archivos exitosos
+  if (!isMobile && successCount > 0) {
     html += `
                 <a href="${downloadUrl}" class="primary-btn" download>
                     <i class="fa-solid fa-download"></i> Descargar archivos procesados
