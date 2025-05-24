@@ -159,34 +159,13 @@ function renderMobileInterface() {
         ? `<i class="fa-solid fa-video"></i> Video`
         : `<i class="fa-solid fa-image"></i> Imagen`;
 
-    // Action input para móvil
-    let actionInput = "";
-    if (item.file_type === "video") {
-      actionInput = `
-        <div class="mobile-input-group mobile-input-full">
-          <label><i class="fa-solid fa-gear"></i> Acción a realizar</label>
-          <select id="accion-${idx}" class="mobile-select">
-            <option value="modificar_video">Solo cambiar metadata</option>
-            <option value="extraer_frame">Extraer imagen del video</option>
-          </select>
-        </div>`;
-    } else if (item.file_type === "image") {
-      actionInput = `
-        <div class="mobile-input-group mobile-input-full">
-          <label><i class="fa-solid fa-gear"></i> Acción a realizar</label>
-          <input type="text" value="Modificar metadatos" readonly>
-        </div>`;
-    } else {
-      actionInput = `
-        <div class="mobile-input-group mobile-input-full">
-          <label><i class="fa-solid fa-gear"></i> Acción a realizar</label>
-          <input type="text" value="No soportado" readonly>
-        </div>`;
-    }
-
     // Construir fecha y hora extraídas en formato legible
     const fechaExtraida = formatearFecha(item.fecha);
     const horaExtraida = formatearHora(item.hora);
+
+    // Fechas para inputs
+    const fechaHTMLValue = convertirFechaAHTML(item.fecha);
+    const horaHTMLValue = convertirHoraAHTML(item.hora);
 
     html += `
       <div class="mobile-file-card">
@@ -199,33 +178,48 @@ function renderMobileInterface() {
         </div>
         
         <div class="mobile-inputs">
+          <!-- Sección de fecha y hora extraída -->
           <div class="mobile-input-row">
             <div class="mobile-input-group">
               <label><i class="fa-solid fa-calendar-check"></i> Fecha extraída</label>
               <input type="text" id="fecha-extraida-${idx}" value="${fechaExtraida}" readonly>
             </div>
+            
             <div class="mobile-input-group">
               <label><i class="fa-solid fa-clock"></i> Hora extraída</label>
               <input type="text" id="hora-extraida-${idx}" value="${horaExtraida}" readonly>
             </div>
           </div>
           
+          <!-- Sección de fecha nueva -->
           <div class="mobile-input-row">
             <div class="mobile-input-group">
               <label><i class="fa-solid fa-calendar-plus"></i> Fecha nueva</label>
-              <input type="date" id="fecha-nueva-${idx}" class="editable mobile-date-input" 
-                     value="${convertirFechaAHTML(item.fecha)}" 
-                     data-original-format="${item.fecha}">
+              <input 
+                type="date" 
+                id="fecha-nueva-${idx}" 
+                class="editable mobile-date-input" 
+                value="${fechaHTMLValue}" 
+                data-original-format="${item.fecha}">
             </div>
+            
             <div class="mobile-input-group">
               <label><i class="fa-solid fa-clock"></i> Hora nueva</label>
-              <input type="time" id="hora-nueva-${idx}" class="editable mobile-time-input" 
-                     value="${convertirHoraAHTML(item.hora)}" step="1"
-                     data-original-format="${item.hora}">
+              <input 
+                type="time" 
+                id="hora-nueva-${idx}" 
+                class="editable mobile-time-input" 
+                value="${horaHTMLValue}" 
+                step="1"
+                data-original-format="${item.hora}">
             </div>
           </div>
           
-          ${actionInput}
+          <!-- Sección de acción a realizar -->
+          <div class="mobile-input-group mobile-input-full">
+            <label><i class="fa-solid fa-gear"></i> Acción a realizar</label>
+            ${getActionInputHTML(item.file_type, idx)}
+          </div>
         </div>
       </div>`;
   });
@@ -241,6 +235,21 @@ function renderMobileInterface() {
     </button>`;
 
   batchDiv.innerHTML = html;
+}
+
+// Función auxiliar para obtener el HTML del input de acción
+function getActionInputHTML(fileType, idx) {
+  if (fileType === "video") {
+    return `
+      <select id="accion-${idx}" class="mobile-select">
+        <option value="modificar_video">Solo cambiar metadata</option>
+        <option value="extraer_frame">Extraer imagen del video</option>
+      </select>`;
+  } else if (fileType === "image") {
+    return `<input type="text" value="Modificar metadatos" readonly>`;
+  } else {
+    return `<input type="text" value="No soportado" readonly>`;
+  }
 }
 
 // Función para formatear fecha de YYYY:MM:DD a formato legible DD/MM/YYYY

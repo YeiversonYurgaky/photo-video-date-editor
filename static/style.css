@@ -187,7 +187,7 @@ h1::after {
   body {
     font-size: 16px;
     overflow-x: hidden;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #5b52e0 0%, #764ba2 100%);
     height: auto;
     min-height: 100vh;
     overflow-y: auto;
@@ -239,43 +239,45 @@ h1::after {
     margin-bottom: 20px;
     text-align: center;
     padding-bottom: 12px;
+    color: #5b52e0;
   }
 
   /* Drop zone simplificada y más grande */
   .drop-zone {
-    padding: 32px 16px;
+    padding: 40px 16px;
     border-radius: 16px;
-    border: 2px dashed rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.1);
+    border: 2px dashed rgba(91, 82, 224, 0.3);
+    background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(8px);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    min-height: 180px;
+    min-height: 200px;
   }
 
   .drop-zone i {
-    font-size: 42px;
+    font-size: 48px;
     margin-bottom: 16px;
-    color: white;
+    color: #5b52e0;
   }
 
   .drop-zone h3 {
     font-size: 18px;
     margin: 0 0 8px 0;
-    color: white;
+    color: #5b52e0;
   }
 
   .drop-zone p {
     font-size: 14px;
     margin: 0 0 8px 0;
-    color: rgba(255, 255, 255, 0.8);
+    color: #666;
   }
 
   .drop-zone.dragover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(91, 82, 224, 0.1);
+    border-color: #5b52e0;
     transform: scale(1.02);
   }
 
@@ -285,7 +287,7 @@ h1::after {
     align-items: center;
     gap: 8px;
     background: white;
-    color: var(--primary-color);
+    color: #5b52e0;
     border: none;
     border-radius: 50px;
     padding: 12px 20px;
@@ -307,7 +309,7 @@ h1::after {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    padding-bottom: 80px; /* Espacio para el botón flotante */
+    padding-bottom: 90px; /* Espacio para el botón flotante */
   }
 
   /* Tarjeta de archivo optimizada */
@@ -318,6 +320,7 @@ h1::after {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
+    margin-bottom: 24px;
   }
 
   /* Cabecera de tarjeta con preview */
@@ -386,17 +389,17 @@ h1::after {
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
   }
 
   .mobile-input-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
 
   .mobile-input-full {
-    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .mobile-input-group {
@@ -423,7 +426,7 @@ h1::after {
   .mobile-input-group input,
   .mobile-input-group select {
     width: 100%;
-    padding: 12px 14px;
+    padding: 14px;
     border-radius: 12px;
     border: 2px solid var(--gray-200);
     font-size: 16px;
@@ -433,6 +436,8 @@ h1::after {
     appearance: none;
     -webkit-appearance: none;
     transition: all 0.2s ease;
+    height: 50px;
+    box-sizing: border-box;
   }
 
   .mobile-input-group input:focus,
@@ -451,9 +456,17 @@ h1::after {
 
   /* Inputs editables destacados */
   .mobile-input-group input.editable {
-    background-color: var(--primary-light);
-    border-color: var(--primary-color);
+    background-color: #eef2ff;
+    border-color: #5b52e0;
     color: var(--gray-800);
+  }
+
+  /* Estilos específicos para inputs de fecha y hora */
+  .mobile-date-input,
+  .mobile-time-input {
+    padding-right: 10px !important;
+    font-size: 16px !important;
+    padding-left: 10px !important;
   }
 
   /* Selects con icono de flecha */
@@ -472,11 +485,7 @@ h1::after {
     transform: translateX(-50%);
     width: calc(100% - 32px);
     max-width: 400px;
-    background: linear-gradient(
-      135deg,
-      var(--primary-color),
-      var(--primary-hover)
-    );
+    background: #5b52e0;
     color: white;
     border: none;
     border-radius: 16px;
@@ -505,12 +514,13 @@ h1::after {
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     margin: 0;
+    margin-bottom: 80px;
   }
 
   .results-header {
     padding: 20px;
     text-align: center;
-    background: var(--primary-color);
+    background: #5b52e0;
   }
 
   .results-header h3 {
@@ -701,6 +711,22 @@ h1::after {
     height: 48px;
     margin-bottom: 16px;
     border-width: 4px;
+  }
+
+  /* Título de la sección de archivos */
+  .output-panel h1 {
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: none;
+    text-align: left;
+    padding-left: 16px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .output-panel h1::after {
+    display: none;
   }
 }
 
@@ -1376,7 +1402,7 @@ label:hover {
     grid-column: 1 / -1;
   }
 
-  /* Botón de procesar móvil grande */
+  /* Botón de proceso móvil grande */
   .mobile-process-btn {
     width: 100%;
     background: linear-gradient(
@@ -1753,6 +1779,7 @@ input[readonly].hora-input {
 
 .result-content {
   flex: 1;
+  min-width: 0;
 }
 
 .result-filename {
