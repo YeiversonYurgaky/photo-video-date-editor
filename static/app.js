@@ -139,6 +139,9 @@ function renderMobileInterface() {
 
   currentBatchData.forEach((item, idx) => {
     const fileName = item.filename;
+    // Determinamos si debemos colapsar las tarjetas por defecto cuando hay muchos archivos
+    const shouldCollapseDefault = currentBatchData.length > 3;
+    const collapsedClass = shouldCollapseDefault ? "collapsed" : "";
 
     // Preview para móvil
     let previewHtml = "";
@@ -168,7 +171,13 @@ function renderMobileInterface() {
     const horaHTMLValue = convertirHoraAHTML(item.hora);
 
     html += `
-      <div class="mobile-file-card">
+      <div class="mobile-file-card ${collapsedClass}" id="file-card-${idx}">
+        <button class="mobile-toggle-btn" onclick="toggleFileCard(${idx})">
+          <i class="fa-solid ${
+            shouldCollapseDefault ? "fa-chevron-down" : "fa-chevron-up"
+          }"></i>
+        </button>
+        
         <div class="mobile-file-header">
           <div class="mobile-preview">${previewHtml}</div>
           <div class="mobile-file-info">
@@ -635,3 +644,24 @@ window.addEventListener("resize", function () {
     renderBatchTable();
   }
 });
+
+// Función para expandir/colapsar una tarjeta de archivo
+function toggleFileCard(index) {
+  const card = document.getElementById(`file-card-${index}`);
+  const toggleBtn = card.querySelector(".mobile-toggle-btn i");
+
+  if (card.classList.contains("collapsed")) {
+    card.classList.remove("collapsed");
+    toggleBtn.classList.remove("fa-chevron-down");
+    toggleBtn.classList.add("fa-chevron-up");
+  } else {
+    card.classList.add("collapsed");
+    toggleBtn.classList.remove("fa-chevron-up");
+    toggleBtn.classList.add("fa-chevron-down");
+  }
+
+  // Hacer scroll al card cuando se expande
+  if (!card.classList.contains("collapsed")) {
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}

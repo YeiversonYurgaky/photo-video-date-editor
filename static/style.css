@@ -204,6 +204,7 @@ h1::after {
     overflow-y: auto;
     overflow-x: hidden;
     box-sizing: border-box;
+    padding-bottom: 90px; /* Espacio para el botón flotante */
   }
 
   /* Contenedores principales simplificados */
@@ -309,7 +310,6 @@ h1::after {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    padding-bottom: 90px; /* Espacio para el botón flotante */
   }
 
   /* Tarjeta de archivo optimizada */
@@ -320,7 +320,53 @@ h1::after {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
+    max-height: min(80vh, 600px);
+    position: relative;
+  }
+
+  .mobile-file-card.collapsed .mobile-inputs {
+    display: none;
+  }
+
+  .mobile-file-card .mobile-toggle-btn {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--gray-200);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #5b52e0;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  @media (max-height: 700px) {
+    .mobile-inputs {
+      padding: 12px;
+      gap: 16px;
+    }
+
+    .mobile-input-row {
+      gap: 12px;
+    }
+
+    .mobile-input-group input,
+    .mobile-input-group select {
+      padding: 12px;
+      height: 46px;
+    }
+
+    .mobile-file-card {
+      margin-bottom: 12px;
+    }
   }
 
   /* Cabecera de tarjeta con preview */
@@ -514,7 +560,6 @@ h1::after {
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     margin: 0;
-    margin-bottom: 80px;
   }
 
   .results-header {
@@ -2131,4 +2176,56 @@ select:focus {
 .output-panel h1 {
   font-size: 1.3rem;
   margin-bottom: 18px;
+}
+
+/* Estilos específicos para tarjetas colapsadas/expandidas */
+.mobile-file-card {
+  transition: all 0.3s ease;
+}
+
+.mobile-file-card.collapsed {
+  max-height: 104px; /* Altura solo para mostrar la cabecera */
+  margin-bottom: 12px;
+}
+
+.mobile-file-card .mobile-toggle-btn {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--gray-200);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5b52e0;
+  font-size: 12px;
+  cursor: pointer;
+  z-index: 5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.mobile-file-card .mobile-toggle-btn:active {
+  transform: scale(0.95);
+  background: #f1f5f9;
+}
+
+/* Indicador visual para tarjetas colapsadas */
+.mobile-file-card.collapsed::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #5b52e0, #764ba2);
+  z-index: 2;
+}
+
+/* Ajuste para la sección de resultados */
+.batch-results {
+  margin-bottom: 16px;
 }
