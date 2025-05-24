@@ -690,11 +690,12 @@ function formatDisplayFileName(fileName) {
   }
 
   // Para nombres muy largos, truncar y añadir elipsis
-  if (fileName.length > 25) {
+  if (fileName.length > 28) {
     const extension = fileName.split(".").pop();
     const name = fileName.substring(0, fileName.lastIndexOf("."));
-    return name.substring(0, 22) + "..." + "." + extension;
+    return name.substring(0, 24) + "..." + "." + extension;
   }
 
+  // Para los nombres de archivo normales, simplemente retornar
   return fileName;
 }

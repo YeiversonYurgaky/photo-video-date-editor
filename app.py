@@ -189,25 +189,22 @@ def upload_files():
             
             # Tratar nombre de archivo desde dispositivos móviles
             is_mobile_upload = False
-            mobile_markers = ['image.', 'video.', 'IMG_', 'VID_', 'Camera', 'File:', 'Video:', 'Photo:']
+            mobile_markers = ['image.', 'video.']  # Reducimos los marcadores para mantener más nombres originales
 
-            # Detectar si es una carga desde móvil
+            # Detectar si es una carga genérica desde móvil sin nombre real
             for marker in mobile_markers:
-                if marker in original_filename:
+                if original_filename.startswith(marker):
                     is_mobile_upload = True
                     break
 
-            # También verificar el header User-Agent para detección de dispositivos móviles
-            user_agent = request.headers.get('User-Agent', '').lower()
-            if 'mobile' in user_agent or 'android' in user_agent or 'iphone' in user_agent or 'ipad' in user_agent:
-                is_mobile_upload = True
-
-            if is_mobile_upload or original_filename.startswith('image.') or original_filename.startswith('video.'):
+            # Solo generamos un nombre nuevo si es una carga genérica sin nombre real
+            if is_mobile_upload:
                 # Generar un nombre con timestamp más descriptivo para móviles
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 ext = original_filename.split('.')[-1].lower()
                 device_type = 'unknown'
                 
+                user_agent = request.headers.get('User-Agent', '').lower()
                 if 'iphone' in user_agent or 'ios' in user_agent:
                     device_type = 'ios'
                 elif 'android' in user_agent:
@@ -219,6 +216,7 @@ def upload_files():
             print(f"[DEBUG] Nombre procesado: {original_filename}")
             
             # Limpiamos el nombre para que sea seguro para el sistema de archivos
+            # pero preservando la mayor parte del nombre original posible
             filename = secure_filename(original_filename)
             print(f"[DEBUG] Nombre seguro: {filename}")
             
@@ -226,7 +224,7 @@ def upload_files():
             if len(filename) < 3:
                 current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
                 file_ext = original_filename.split('.')[-1] if '.' in original_filename else 'jpg'
-                filename = f"mobile_upload_{current_time}.{file_ext}"
+                filename = f"upload_{current_time}.{file_ext}"
                 print(f"[DEBUG] Nombre genérico: {filename}")
             
             file_path = os.path.join(session_folder, filename)
