@@ -101,6 +101,12 @@ textarea,
   user-select: text;
 }
 
+/* Ocultar interfaz móvil en desktop */
+.mobile-files-container,
+.mobile-back-btn {
+  display: none;
+}
+
 /* Contenedor principal */
 .container {
   background: rgba(255, 255, 255, 0.95);
@@ -176,16 +182,38 @@ h1::after {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* RESPONSIVE MOBILE LAYOUT */
+/* MOBILE-FIRST DESIGN - INTERFAZ COMPLETAMENTE DIFERENTE */
 @media (max-width: 768px) {
+  body {
+    font-size: 16px; /* Mucho más grande para móvil */
+    overflow-x: hidden;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
   .main-flex {
     flex-direction: column;
-    padding: 16px;
-    gap: 16px;
+    padding: 12px;
+    gap: 0;
     height: auto;
     min-height: 100vh;
     overflow-y: auto;
     overflow-x: hidden;
+  }
+
+  /* Interfaz de una sola columna simple */
+  .form-panel,
+  .output-panel {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* Ocultar el panel de formulario cuando hay archivos cargados */
+  .form-panel.has-files {
+    display: none;
   }
 }
 
@@ -203,20 +231,36 @@ h1::after {
   position: relative;
 }
 
-/* MOBILE: Form Panel */
+/* MOBILE: Botón de carga súper grande y fácil de usar */
 @media (max-width: 768px) {
-  .form-panel {
-    min-width: unset;
-    max-width: 100%;
-    width: 100%;
-    padding: 24px 20px;
-    max-height: unset;
-    height: auto;
+  .form-panel h1 {
+    font-size: 1.75rem;
+    margin-bottom: 32px;
+    text-align: center;
   }
 
-  .form-panel h1 {
-    font-size: 1.25rem;
-    margin-bottom: 24px;
+  .form-panel #select-file-btn {
+    font-size: 1.5rem;
+    padding: 32px 24px;
+    width: 100%;
+    min-height: 120px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    line-height: 1.3;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .form-panel #select-file-btn i {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+  }
+
+  .form-panel #select-file-btn:active {
+    transform: scale(0.98);
   }
 }
 
@@ -330,13 +374,36 @@ h1::after {
   flex-direction: column;
 }
 
-/* MOBILE: Output Panel */
+/* MOBILE: Lista de archivos simplificada y grande */
 @media (max-width: 768px) {
   .output-panel {
-    padding: 20px 16px;
-    min-height: 50vh;
-    overflow-y: auto;
-    border-radius: var(--border-radius-lg);
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  /* Botón de volver en móvil */
+  .mobile-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-color);
+    cursor: pointer;
+    margin-bottom: 16px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-back-btn:active {
+    transform: scale(0.98);
   }
 }
 
@@ -716,127 +783,138 @@ label:hover {
   }
 }
 
-/* MOBILE: Optimización completa para móvil */
+/* MOBILE: Cards en lugar de tabla - INTERFAZ COMPLETAMENTE NUEVA */
 @media (max-width: 768px) {
-  body {
-    font-size: 12px;
-    overflow-x: hidden;
+  /* Ocultar tabla completamente en móvil */
+  .batch-table-container {
+    display: none;
   }
 
-  .archivos-table-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-sm);
-    margin: 0 -16px; /* Compensar padding del contenedor */
-    padding: 0 16px;
+  /* Mostrar interfaz de cards para móvil */
+  .mobile-files-container {
+    display: block;
   }
 
-  .archivos-table {
-    min-width: 650px; /* Asegurar scroll horizontal */
-    font-size: 11px;
+  .mobile-file-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
-  .archivos-table th,
-  .archivos-table td {
-    padding: 6px 4px;
-    white-space: nowrap;
-    font-size: 10px;
+  .mobile-file-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
   }
 
-  /* Columna Preview - más pequeña */
-  .archivos-table th:nth-child(1),
-  .archivos-table td:nth-child(1) {
-    width: 45px;
-    min-width: 45px;
-    max-width: 45px;
+  .mobile-preview {
+    width: 60px;
+    height: 80px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--gray-100);
+    flex-shrink: 0;
   }
 
-  .preview-container {
-    width: 35px;
-    height: 50px;
+  .mobile-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
-  /* Columna Archivo - optimizada */
-  .archivos-table th:nth-child(2) {
-    width: 110px;
-    min-width: 110px;
-    max-width: 110px;
+  .mobile-file-info {
+    flex: 1;
+    min-width: 0;
   }
 
-  .file-name-container {
-    max-width: 100px;
-    gap: 4px;
+  .mobile-file-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 4px;
+    word-break: break-word;
   }
 
-  .file-name {
-    font-size: 10px;
-    max-width: 80px;
-  }
-
-  .file-icon {
-    font-size: 12px;
-  }
-
-  /* Inputs optimizados para móvil */
-  .fecha-input,
-  .hora-input {
-    font-size: 10px;
-    padding: 4px 6px;
-    width: 70px;
-    min-width: 70px;
-  }
-
-  .action-select {
-    font-size: 10px;
-    padding: 4px 6px;
-    width: 80px;
-    min-width: 80px;
-  }
-
-  /* Columnas de fecha y hora más pequeñas */
-  .archivos-table th:nth-child(3),
-  .archivos-table th:nth-child(4),
-  .archivos-table th:nth-child(5),
-  .archivos-table th:nth-child(6),
-  .archivos-table th:nth-child(7) {
-    width: 80px;
-    min-width: 80px;
-    max-width: 80px;
-    font-size: 9px;
-  }
-
-  /* Controles de batch más compactos */
-  .batch-controls {
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
-  }
-
-  .batch-count {
-    font-size: 12px;
-    text-align: center;
-  }
-
-  .control-btn {
-    font-size: 12px;
-    padding: 8px 12px;
-  }
-
-  /* Botones principales */
-  button {
-    font-size: 12px;
-    padding: 10px 16px;
-  }
-
-  #procesar-btn {
+  .mobile-file-type {
     font-size: 14px;
-    padding: 12px 20px;
+    color: var(--gray-500);
+    background: var(--gray-100);
+    padding: 4px 8px;
+    border-radius: 8px;
+    display: inline-block;
   }
 
-  #procesar-batch-btn {
-    font-size: 13px;
-    padding: 10px 18px;
+  .mobile-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .mobile-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-input-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-700);
+  }
+
+  .mobile-input-group input,
+  .mobile-input-group select {
+    padding: 12px 16px;
+    border: 2px solid var(--gray-200);
+    border-radius: 12px;
+    font-size: 16px;
+    background: white;
+    color: var(--gray-700);
+  }
+
+  .mobile-input-group input:focus,
+  .mobile-input-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  }
+
+  .mobile-action-full {
+    grid-column: 1 / -1;
+  }
+
+  /* Botón de procesar móvil grande */
+  .mobile-process-btn {
+    width: 100%;
+    background: linear-gradient(
+      135deg,
+      var(--primary-color),
+      var(--primary-hover)
+    );
+    color: white;
+    border: none;
+    padding: 20px;
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobile-process-btn:active {
+    transform: scale(0.98);
+  }
+
+  .mobile-process-btn:disabled {
+    background: var(--gray-300);
+    cursor: not-allowed;
   }
 }
 

@@ -100,6 +100,19 @@ function renderBatchTable() {
     return;
   }
 
+  // Detectar si es móvil
+  const isMobile = window.innerWidth <= 768;
+
+  if (isMobile) {
+    renderMobileInterface();
+    // Ocultar form panel en móvil cuando hay archivos
+    document.querySelector(".form-panel").classList.add("has-files");
+    return;
+  } else {
+    // Mostrar form panel en desktop
+    document.querySelector(".form-panel").classList.remove("has-files");
+  }
+
   let html = `
         <div class="batch-table-container">
             <div class="batch-controls">
@@ -224,6 +237,111 @@ function renderBatchTable() {
   batchDiv.innerHTML = html;
 }
 
+function renderMobileInterface() {
+  const batchDiv = document.getElementById("archivos-table-div");
+
+  let html = `
+    <button class="mobile-back-btn" onclick="goBackToUpload()">
+      <i class="fa-solid fa-arrow-left"></i>
+      Subir más archivos
+    </button>
+    
+    <div class="mobile-files-container">`;
+
+  currentBatchData.forEach((item, idx) => {
+    const fileName = item.filename;
+    const ext = fileName.split(".").pop().toLowerCase();
+
+    // Preview para móvil
+    let previewHtml = "";
+    if (item.thumb) {
+      previewHtml = `<img src="${item.thumb}" alt="Preview">`;
+    } else {
+      previewHtml = `
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--gray-500);">
+          <i class="fa-solid ${
+            item.file_type === "video" ? "fa-video" : "fa-image"
+          }" style="font-size: 24px;"></i>
+        </div>`;
+    }
+
+    // Tipo de archivo
+    let fileTypeText = item.file_type === "video" ? "Video" : "Imagen";
+
+    // Action input para móvil
+    let actionInput = "";
+    if (item.file_type === "video") {
+      actionInput = `
+        <div class="mobile-input-group mobile-action-full">
+          <label>Acción</label>
+          <select id="accion-${idx}">
+            <option value="modificar_video">Solo metadata</option>
+            <option value="extraer_frame">Extraer frame</option>
+          </select>
+        </div>`;
+    } else if (item.file_type === "image") {
+      actionInput = `
+        <div class="mobile-input-group mobile-action-full">
+          <label>Acción</label>
+          <input type="text" value="Modificar imagen" readonly style="background: var(--gray-100); color: var(--gray-600);">
+        </div>`;
+    } else {
+      actionInput = `
+        <div class="mobile-input-group mobile-action-full">
+          <label>Acción</label>
+          <input type="text" value="No soportado" readonly style="background: var(--gray-100); color: var(--gray-400);">
+        </div>`;
+    }
+
+    html += `
+      <div class="mobile-file-card">
+        <div class="mobile-file-header">
+          <div class="mobile-preview">${previewHtml}</div>
+          <div class="mobile-file-info">
+            <div class="mobile-file-name">${fileName}</div>
+            <div class="mobile-file-type">${fileTypeText}</div>
+          </div>
+        </div>
+        
+        <div class="mobile-inputs">
+          <div class="mobile-input-group">
+            <label>Fecha extraída</label>
+            <input type="text" id="fecha-extraida-${idx}" value="${item.fecha}" readonly>
+          </div>
+          <div class="mobile-input-group">
+            <label>Hora extraída</label>
+            <input type="text" id="hora-extraida-${idx}" value="${item.hora}" readonly>
+          </div>
+          <div class="mobile-input-group">
+            <label>Fecha nueva</label>
+            <input type="text" id="fecha-nueva-${idx}" value="${item.fecha}" class="editable">
+          </div>
+          <div class="mobile-input-group">
+            <label>Hora nueva</label>
+            <input type="text" id="hora-nueva-${idx}" value="${item.hora}" class="editable">
+          </div>
+          ${actionInput}
+        </div>
+      </div>`;
+  });
+
+  html += `
+    </div>
+    
+    <button class="mobile-process-btn" onclick="processBatch()">
+      <i class="fa-solid fa-play"></i>
+      Procesar ${currentBatchData.length} archivo(s)
+    </button>`;
+
+  batchDiv.innerHTML = html;
+}
+
+function goBackToUpload() {
+  // Limpiar datos y volver a la pantalla de carga
+  clearBatch();
+  document.querySelector(".form-panel").classList.remove("has-files");
+}
+
 function getFileIcon(extension) {
   const iconMap = {
     jpg: "fa-image",
@@ -293,15 +411,19 @@ async function processBatch() {
 
 function showBatchProcessing() {
   const statusZone = document.getElementById("batch-status-zone");
-  statusZone.innerHTML = `
+  if (statusZone) {
+    statusZone.innerHTML = `
         <div class="batch-status batch-status-processing">
             <i class="fa-spinner fa-spin"></i> Procesando...
         </div>`;
+  }
 }
 
 function hideBatchProcessing() {
   const statusZone = document.getElementById("batch-status-zone");
-  statusZone.innerHTML = "";
+  if (statusZone) {
+    statusZone.innerHTML = "";
+  }
 }
 
 function showBatchResults(results, downloadUrl) {
@@ -375,20 +497,11 @@ function clearBatch() {
 }
 
 function showError(message) {
-  // Crear o actualizar mensaje de error
-  let errorDiv = document.getElementById("error-message");
-  if (!errorDiv) {
-    errorDiv = document.createElement("div");
-    errorDiv.id = "error-message";
-    errorDiv.className = "error-message";
-    document.querySelector(".form-panel .section").appendChild(errorDiv);
-  }
-
-  errorDiv.textContent = message;
-  errorDiv.style.display = "block";
-
-  // Auto-ocultar después de 5 segundos
-  setTimeout(() => {
-    errorDiv.style.display = "none";
-  }, 5000);
+  console.error("Error:", message);
+  const batchDiv = document.getElementById("archivos-table-div");
+  batchDiv.innerHTML = `
+        <div class="error-message">
+            <i class="fa-solid fa-exclamation-triangle"></i>
+            ${message}
+        </div>`;
 }
