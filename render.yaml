@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: metadata-editor
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9
+    buildCommand: docker build -t metadata-editor .
+    startCommand: ""

@@ -142,7 +142,7 @@ def get_bin_path(filename):
     """
     print(f"[DEBUG] Buscando binario: {filename} en {platform.system()}")
     
-    # En Linux (como Render), usar binarios del sistema directamente
+    # En Linux (como Render o Docker), usar binarios del sistema directamente
     if platform.system() != 'Windows':
         clean_filename = filename.replace('.exe', '')
         system_path = shutil.which(clean_filename)
@@ -152,6 +152,9 @@ def get_bin_path(filename):
             return system_path
         else:
             print(f"[DEBUG] No encontrado {clean_filename} en PATH del sistema")
+            # En Docker, los binarios deberían estar disponibles directamente por nombre
+            print(f"[DEBUG] Intentando usar directamente: {clean_filename}")
+            return clean_filename
     
     # Fallback a carpeta bin local (para Windows/desarrollo)
     if getattr(sys, 'frozen', False):
