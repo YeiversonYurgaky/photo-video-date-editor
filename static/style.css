@@ -81,6 +81,24 @@ body {
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Optimizaciones móvil */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Permitir selección de texto en inputs y áreas de contenido */
+input,
+textarea,
+.file-name,
+.result-content {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
 /* Contenedor principal */
@@ -158,6 +176,19 @@ h1::after {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+/* RESPONSIVE MOBILE LAYOUT */
+@media (max-width: 768px) {
+  .main-flex {
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+
 /* Panel de formulario con diseño elegante */
 .form-panel {
   display: flex;
@@ -170,6 +201,23 @@ h1::after {
   height: auto;
   max-height: 90vh;
   position: relative;
+}
+
+/* MOBILE: Form Panel */
+@media (max-width: 768px) {
+  .form-panel {
+    min-width: unset;
+    max-width: 100%;
+    width: 100%;
+    padding: 24px 20px;
+    max-height: unset;
+    height: auto;
+  }
+
+  .form-panel h1 {
+    font-size: 1.25rem;
+    margin-bottom: 24px;
+  }
 }
 
 .form-panel::before {
@@ -282,6 +330,16 @@ h1::after {
   flex-direction: column;
 }
 
+/* MOBILE: Output Panel */
+@media (max-width: 768px) {
+  .output-panel {
+    padding: 20px 16px;
+    min-height: 50vh;
+    overflow-y: auto;
+    border-radius: var(--border-radius-lg);
+  }
+}
+
 /* Secciones mejoradas */
 .section {
   margin-bottom: 16px;
@@ -304,6 +362,20 @@ h1::after {
   gap: 12px;
   margin-bottom: 20px;
   align-items: center;
+}
+
+/* MOBILE: Input Groups */
+@media (max-width: 768px) {
+  .input-group {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .section {
+    padding: 16px;
+    margin-bottom: 12px;
+  }
 }
 
 input[type="text"],
@@ -641,6 +713,130 @@ label:hover {
 
   .file-name-container {
     max-width: 130px;
+  }
+}
+
+/* MOBILE: Optimización completa para móvil */
+@media (max-width: 768px) {
+  body {
+    font-size: 12px;
+    overflow-x: hidden;
+  }
+
+  .archivos-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    margin: 0 -16px; /* Compensar padding del contenedor */
+    padding: 0 16px;
+  }
+
+  .archivos-table {
+    min-width: 650px; /* Asegurar scroll horizontal */
+    font-size: 11px;
+  }
+
+  .archivos-table th,
+  .archivos-table td {
+    padding: 6px 4px;
+    white-space: nowrap;
+    font-size: 10px;
+  }
+
+  /* Columna Preview - más pequeña */
+  .archivos-table th:nth-child(1),
+  .archivos-table td:nth-child(1) {
+    width: 45px;
+    min-width: 45px;
+    max-width: 45px;
+  }
+
+  .preview-container {
+    width: 35px;
+    height: 50px;
+  }
+
+  /* Columna Archivo - optimizada */
+  .archivos-table th:nth-child(2) {
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
+  }
+
+  .file-name-container {
+    max-width: 100px;
+    gap: 4px;
+  }
+
+  .file-name {
+    font-size: 10px;
+    max-width: 80px;
+  }
+
+  .file-icon {
+    font-size: 12px;
+  }
+
+  /* Inputs optimizados para móvil */
+  .fecha-input,
+  .hora-input {
+    font-size: 10px;
+    padding: 4px 6px;
+    width: 70px;
+    min-width: 70px;
+  }
+
+  .action-select {
+    font-size: 10px;
+    padding: 4px 6px;
+    width: 80px;
+    min-width: 80px;
+  }
+
+  /* Columnas de fecha y hora más pequeñas */
+  .archivos-table th:nth-child(3),
+  .archivos-table th:nth-child(4),
+  .archivos-table th:nth-child(5),
+  .archivos-table th:nth-child(6),
+  .archivos-table th:nth-child(7) {
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    font-size: 9px;
+  }
+
+  /* Controles de batch más compactos */
+  .batch-controls {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .batch-count {
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .control-btn {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  /* Botones principales */
+  button {
+    font-size: 12px;
+    padding: 10px 16px;
+  }
+
+  #procesar-btn {
+    font-size: 14px;
+    padding: 12px 20px;
+  }
+
+  #procesar-batch-btn {
+    font-size: 13px;
+    padding: 10px 18px;
   }
 }
 
@@ -1043,11 +1239,52 @@ input[readonly].hora-input {
 }
 
 /* Responsive para footer */
-@media (max-width: 700px) {
+/* MOBILE: Resultados y footer */
+@media (max-width: 768px) {
   .batch-footer,
   .results-actions {
     flex-direction: column;
     gap: 12px;
+  }
+
+  .batch-results {
+    margin-top: 16px;
+    padding: 16px;
+  }
+
+  .results-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .results-list {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .result-item {
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+
+  .result-filename {
+    font-size: 12px;
+  }
+
+  .result-message {
+    font-size: 11px;
+  }
+
+  .results-summary {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .summary-stat {
+    text-align: center;
+    padding: 8px;
   }
 }
 
