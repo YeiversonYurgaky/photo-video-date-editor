@@ -135,7 +135,52 @@ def extract_datetime_from_filename(filename):
     return fecha, hora
 
 
-def get_bin_path(filename):    """    Obtiene la ruta del binario, adaptándose al sistema operativo.    Prioriza binarios del sistema en Linux/producción.    """    # En Linux (como Render), usar binarios del sistema directamente    if platform.system() != 'Windows':        clean_filename = filename.replace('.exe', '')        system_path = shutil.which(clean_filename)        if system_path:            return system_path        # Fallback a carpeta bin local (para Windows/desarrollo)    if getattr(sys, 'frozen', False):        base_path = sys._MEIPASS    else:        base_path = os.path.dirname(os.path.abspath(__file__))        return os.path.join(base_path, 'bin', filename)
+def get_bin_path(filename):
+    """
+    Obtiene la ruta del binario, adaptándose al sistema operativo.
+    Prioriza binarios del sistema en Linux/producción.
+    """
+    print(f"[DEBUG] Buscando binario: {filename} en {platform.system()}")
+    
+    # En Linux (como Render), usar binarios del sistema directamente
+    if platform.system() != 'Windows':
+        clean_filename = filename.replace('.exe', '')
+        system_path = shutil.which(clean_filename)
+        print(f"[DEBUG] Buscando {clean_filename} en sistema: {system_path}")
+        if system_path:
+            print(f"[DEBUG] Encontrado binario del sistema: {system_path}")
+            return system_path
+        else:
+            print(f"[DEBUG] No encontrado {clean_filename} en PATH del sistema")
+    
+    # Fallback a carpeta bin local (para Windows/desarrollo)
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    
+    bin_path = os.path.join(base_path, 'bin', filename)
+    print(f"[DEBUG] Ruta de fallback: {bin_path}")
+    
+    # Si no existe el binario local, intentar sin .exe en Linux
+    if not os.path.exists(bin_path) and platform.system() != 'Windows':
+        clean_filename = filename.replace('.exe', '')
+        bin_path = os.path.join(base_path, 'bin', clean_filename)
+        print(f"[DEBUG] Intentando sin .exe: {bin_path}")
+    
+    if os.path.exists(bin_path):
+        print(f"[DEBUG] Binario encontrado en: {bin_path}")
+        return bin_path
+    
+    # Último intento: devolver solo el nombre si está en PATH
+    if platform.system() != 'Windows':
+        clean_filename = filename.replace('.exe', '')
+        print(f"[DEBUG] Último intento, devolviendo nombre: {clean_filename}")
+        return clean_filename
+    
+    print(f"[ERROR] No se pudo encontrar el binario {filename}")
+    raise FileNotFoundError(f"No se pudo encontrar el binario {filename}")
+
 
 def get_creationflags():
     import sys
@@ -282,4 +327,4 @@ def cambiar_metadata_video(video_path, datetime_exif, exiftool_path=None):
     if result.returncode != 0:
         print("Exiftool error:", result.stderr)
         raise RuntimeError(f"Exiftool falló: {result.stderr}")
-    return True
+    return True 
